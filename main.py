@@ -5,6 +5,7 @@ import json
 import csv
 from aiohttp import web
 
+# === Configurazione ===
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 BASE_URL = "https://telegram-bot-rexx.onrender.com"
 WEBHOOK_PATH = f"/webhook/{TOKEN}"
@@ -50,7 +51,7 @@ async def handle_webhook(request):
     await application.process_update(update)
     return web.Response(text="ok")
 
-# === Aiohttp Server ===
+# === Aiohttp server ===
 async def run():
     app = web.Application()
     app.router.add_post(WEBHOOK_PATH, handle_webhook)
@@ -60,8 +61,10 @@ async def run():
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
     await site.start()
 
-    print(f"🌐 Webhook attivo su: {WEBHOOK_URL}")
-    await application.bot.set_webhook(url=WEBHOOK_URL)
+    print(f"🌐 Avvio del webhook su: {WEBHOOK_URL}")
+    response = await application.bot.set_webhook(url=WEBHOOK_URL)
+    print("🔗 Risposta da Telegram:", response)
+
     await application.initialize()
     await application.start()
     await application.updater.start_polling()
