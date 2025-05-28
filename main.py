@@ -1,11 +1,10 @@
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler
 import os
-import json
 import csv
 from aiohttp import web
+from collections import defaultdict
 
-# === Configurazione ===
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 BASE_URL = "https://telegram-bot-rexx.onrender.com"
 WEBHOOK_PATH = f"/webhook/{TOKEN}"
@@ -13,58 +12,88 @@ WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 
 application = ApplicationBuilder().token(TOKEN).build()
 
+# === Memoria temporanea ===
+partite_per_data = defaultdict(list)
+partite_lookup = {}
+
 # === /start ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    try:
-        username = update.effective_user.username or update.effective_user.first_name or "utente"
-        print(f"✅ /start ricevuto da: {username}")
-        await update.message.reply_text("✅ Bot attivo con webhook su Render!")
-    except Exception as e:
-        print("❌ Errore in /start:", e)
-        await update.message.reply_text("⚠️ Errore durante l'avvio del bot.")
+    await update.message.reply_text("✅ Bot attivo con webhook su Render!")
 
 # === /partite ===
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         with open("partite.csv", newline='', encoding='utf-8') as file:
             reader = csv.DictReader(file)
-            messaggi = []
-            for riga in reader:
-                partita = f"📅 {riga['Data']} 🕒 {riga['Ora']}\n⚽ {riga['Squadra1']} vs {riga['Squadra2']} 🏟 {riga['Stadio']}"
-                messaggi.append(partita)
-            messaggio_finale = "\n\n".join(messaggi)
-            await update.message.reply_text(messaggio_finale or "Nessuna partita trovata.")
+            partite_per_data.clear()
+            partite_lookup.clear()
+            for i, riga in enumerate(reader, start=1):
+                partita = {
+                    "id": i,
+                    "ora": riga["Ora"],
+                    "s1": riga["Squadra1"],
+                    "s2": riga["Squadra2"],
+                    "stadio": riga["Stadio"]
+                }
+                partite_per_data[riga["Data"].strip()].append(partita)
+                partite_lookup[str(i)] = partita
+
+        keyboard = [
+            [InlineKeyboardButton(data, callback_data=f"data:{data}")]
+            for data in partite_per_data
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("📅 Seleziona una data:", reply_markup=reply_markup)
+
     except Exception as e:
         print("❌ Errore in /partite:", e)
-        await update.message.reply_text("⚠️ Errore nella lettura delle partite.")
+        await update.message.reply_text("Errore nella lettura delle partite.")
 
-# === Registrazione handler ===
+# === Gestione scelta data ===
+async def handle_date_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    selected_date = query.data.split(":")[1]
+
+    partite = partite_per_data[selected_date]
+    messaggi = []
+    keyboard = []
+
+    for partita in partite:
+        desc = f"{partita['ora']} - {partita['s1']} vs {partita['s2']} ({partita['stadio']})"
+        messaggi.append(desc)
+        keyboard.append([InlineKeyboardButton(desc, callback_data=f"match:{partita['id']}")])
+
+    await query.edit_message_text(
+        text=f"📆 Partite del {selected_date}:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
+# === Callback handler ===
+application.add_handler(CallbackQueryHandler(handle_date_selection, pattern=r"^data:.*"))
+
+# === Comandi ===
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("partite", partite))
 
 # === Webhook handler ===
 async def handle_webhook(request):
-    print("📩 Richiesta ricevuta da Telegram!")
     data = await request.json()
-    print(json.dumps(data, indent=2))
     update = Update.de_json(data, application.bot)
     await application.process_update(update)
     return web.Response(text="ok")
 
-# === Aiohttp server ===
+# === Server ===
 async def run():
     app = web.Application()
     app.router.add_post(WEBHOOK_PATH, handle_webhook)
-    app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render (GET)"))
+    app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render"))
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
     await site.start()
 
-    print(f"🌐 Avvio del webhook su: {WEBHOOK_URL}")
-    response = await application.bot.set_webhook(url=WEBHOOK_URL)
-    print("🔗 Risposta da Telegram:", response)
-
+    await application.bot.set_webhook(url=WEBHOOK_URL)
     await application.initialize()
     await application.start()
     await application.updater.start_polling()
