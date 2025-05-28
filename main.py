@@ -5,7 +5,7 @@ from flask import Flask, request
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 WEBHOOK_PATH = f"/webhook/{TOKEN}"
-WEBHOOK_URL = f"https://telegram-bot-rexx.onrender.com{WEBHOOK_PATH}"  # <-- cambia questo con l'URL reale
+WEBHOOK_URL = f"https://telegram-bot-rexx.onrender.com{WEBHOOK_PATH}"
 
 app = Flask(__name__)
 application = ApplicationBuilder().token(TOKEN).build()
