@@ -56,25 +56,16 @@ async def handle_date_selection(update: Update, context: ContextTypes.DEFAULT_TY
     selected_date = query.data.split(":")[1]
 
     partite = partite_per_data[selected_date]
-    messaggi = []
     keyboard = []
 
     for partita in partite:
         desc = f"{partita['ora']} - {partita['s1']} vs {partita['s2']} ({partita['stadio']})"
-        messaggi.append(desc)
         keyboard.append([InlineKeyboardButton(desc, callback_data=f"match:{partita['id']}")])
 
     await query.edit_message_text(
         text=f"📆 Partite del {selected_date}:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
-# === Callback handler ===
-application.add_handler(CallbackQueryHandler(handle_date_selection, pattern=r"^data:.*"))
-
-# === Comandi ===
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("partite", partite))
 
 # === Webhook handler ===
 async def handle_webhook(request):
@@ -83,7 +74,7 @@ async def handle_webhook(request):
     await application.process_update(update)
     return web.Response(text="ok")
 
-# === Server ===
+# === Server + Webhook Setup ===
 async def run():
     app = web.Application()
     app.router.add_post(WEBHOOK_PATH, handle_webhook)
@@ -93,12 +84,21 @@ async def run():
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
     await site.start()
 
+    # Imposta webhook automaticamente
     await application.bot.set_webhook(url=WEBHOOK_URL)
+    print("🌐 Webhook impostato automaticamente:", WEBHOOK_URL)
+
     await application.initialize()
     await application.start()
-    await application.updater.start_polling()
     await application.updater.idle()
 
+# === Handlers ===
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("partite", partite))
+application.add_handler(CallbackQueryHandler(handle_date_selection, pattern=r"^data:.*"))
+
+# === Avvio ===
 if __name__ == "__main__":
     import asyncio
     asyncio.run(run())
+
