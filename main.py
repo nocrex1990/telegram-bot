@@ -18,7 +18,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 application.add_handler(CommandHandler("start", start))
 
-# ✅ Webhook handler per Render
+# ✅ Webhook handler
 async def handle_webhook(request):
     print("📩 Richiesta ricevuta da Telegram!")
     data = await request.json()
@@ -41,7 +41,7 @@ async def run():
     await application.bot.set_webhook(url=WEBHOOK_URL)
     await application.initialize()
     await application.start()
-    await application.updater.start_polling()  # opzionale per fallback
+    await application.updater.start_polling()
     await application.updater.idle()
 
 if __name__ == "__main__":
