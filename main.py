@@ -3,7 +3,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 import os
 from flask import Flask, request
 
-TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
 BASE_URL = "https://telegram-bot-rexx.onrender.com"
 WEBHOOK_PATH = "/webhook/" + TOKEN
 WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
