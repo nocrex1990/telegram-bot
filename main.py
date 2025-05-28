@@ -11,6 +11,7 @@ WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 application = ApplicationBuilder().token(TOKEN).build()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("✅ Comando /start ricevuto!")
     await update.message.reply_text("Bot attivo con webhook su Render!")
 
 def setup():
