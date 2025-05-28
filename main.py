@@ -4,8 +4,9 @@ import os
 from flask import Flask, request
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-WEBHOOK_PATH = f"/webhook/{TOKEN}"
-WEBHOOK_URL = f"https://telegram-bot-rexx.onrender.com{WEBHOOK_PATH}"
+BASE_URL = "https://telegram-bot-rexx.onrender.com"
+WEBHOOK_PATH = "/webhook/" + TOKEN
+WEBHOOK_URL = BASE_URL + WEBHOOK_PATH
 
 app = Flask(__name__)
 application = ApplicationBuilder().token(TOKEN).build()
