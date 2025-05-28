@@ -13,6 +13,7 @@ application = ApplicationBuilder().token(TOKEN).build()
 
 @app.route(WEBHOOK_PATH, methods=["POST"])
 async def webhook():
+    print("👉 Richiesta ricevuta da Telegram!")
     update = Update.de_json(request.get_json(force=True), application.bot)
     await application.process_update(update)
     return "ok"
