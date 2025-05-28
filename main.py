@@ -13,8 +13,8 @@ application = ApplicationBuilder().token(TOKEN).build()
 
 # ✅ Comando /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    print("✅ Comando /start ricevuto!")
-    await update.message.reply_text("Bot attivo con webhook su Render!")
+    print("✅ /start ricevuto da:", update.effective_user.username)
+    await update.message.reply_text("✅ Bot ti ha ricevuto di nuovo!")
 
 application.add_handler(CommandHandler("start", start))
 
