@@ -1,4 +1,3 @@
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
 import os
@@ -25,7 +24,33 @@ if os.path.exists("scommesse.csv"):
             scommesse_utente[row["user_id"]][row["partita_id"]] = row
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ Bot attivo con webhook su Render!")
+    await update.message.reply_text("""👋 Benvenuto nel bot del Mondiale per Club 2025!
+
+Comandi disponibili:
+
+📅 /partite – Visualizza le partite e inserisci la tua previsione
+✏️ /modifica – Modifica una previsione già inserita
+ℹ️ /info – Dettagli sulla competizione e il regolamento
+
+📌 Regole rapide:
+- Una previsione per partita
+- Risultato esatto coerente con l’esito
+- Modifiche permesse fino all’inizio della partita
+
+🔁 Usa /start in qualsiasi momento per rivedere questo messaggio.""")
+
+async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("""ℹ️ Dettagli sulla competizione:
+
+🏆 Il Mondiale per Club FIFA 2025 si terrà negli Stati Uniti dal 15 giugno al 13 luglio.
+
+📍 Parteciperanno 32 squadre da tutto il mondo, in un formato simile alla Coppa del Mondo FIFA.
+
+🔢 Il torneo sarà diviso in fasi a gironi e a eliminazione diretta.
+
+⚠️ Con questo bot puoi inserire previsioni per ciascuna partita (esito + risultato esatto) e modificarle fino al fischio d’inizio.
+
+Le previsioni saranno salvate e confrontate a fine torneo. Che vinca il più preciso!""")
 
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -45,7 +70,6 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 partite_lookup[str(i)] = partita
 
         user_id = str(update.effective_user.id)
-
         keyboard = []
         for data in partite_per_data:
             disponibili = any(p["id"] not in scommesse_utente[user_id] for p in partite_per_data[data])
@@ -77,9 +101,11 @@ async def handle_match_selection(update: Update, context: ContextTypes.DEFAULT_T
     await query.answer()
     partita_id = query.data.split(":")[1]
     context.user_data["partita_id"] = partita_id
-    buttons = [[InlineKeyboardButton("1", callback_data="esito:1")],
-               [InlineKeyboardButton("X", callback_data="esito:X")],
-               [InlineKeyboardButton("2", callback_data="esito:2")]]
+    buttons = [
+        [InlineKeyboardButton("1", callback_data="esito:1")],
+        [InlineKeyboardButton("X", callback_data="esito:X")],
+        [InlineKeyboardButton("2", callback_data="esito:2")]
+    ]
     await query.edit_message_text("Scegli l'esito della partita:", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def handle_esito_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -121,13 +147,16 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 writer.writerow(scommesse_utente[uid][sid])
     await update.message.reply_text(f"✅ Scommessa registrata per {partita['s1']} vs {partita['s2']}")
 
+# Handlers
 application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("info", info))
 application.add_handler(CommandHandler("partite", partite))
 application.add_handler(CallbackQueryHandler(handle_date_selection, pattern=r"^data:.*"))
 application.add_handler(CallbackQueryHandler(handle_match_selection, pattern=r"^match:.*"))
 application.add_handler(CallbackQueryHandler(handle_esito_selection, pattern=r"^esito:.*"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_risultato))
 
+# Webhook
 async def handle_webhook(request):
     data = await request.json()
     update = Update.de_json(data, application.bot)
