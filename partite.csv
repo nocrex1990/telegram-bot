@@ -1,48 +1,48 @@
-Squadra 1,Squadra 2,Data e Ora,Città
-Al Ahly,Inter Miami,2025-06-15 02:00,Miami
-Bayern Monaco,Auckland City,2025-06-15 18:00,Cincinnati
-PSG,Atletico Madrid,2025-06-15 21:00,Los Angeles
-Palmeiras,Porto,2025-06-16 00:00,New York
-Botafogo,Seattle Sunders,2025-06-16 04:00,Seattle
-Chelsea,Leon,2025-06-16 21:00,Atlanta
-Boca Juniors,Benfica,2025-06-17 00:00,Miami
-Flamengo,Esperance,2025-06-17 03:00,Philadelphia
-Monterrey,Inter,2025-06-18 03:00,Los Angeles
-Fluminense,Borussia Dortmund,2025-06-17 18:00,New York
-Ulsan,Mamelodi Sundowns,2025-06-17 18:00,Orlando
-River Plate,Urawa,2025-06-17 21:00,Seattle
-Pachuca,Salisburgo,2025-06-19 00:00,Cincinnati
-Real Madrid,Al Hilal,2025-06-18 21:00,Miami
-Manchester City,Wydad,2025-06-18 18:00,Philadelphia
-Al Ain,Juventus,2025-06-19 03:00,Washington
-Inter Miami,Porto,2025-06-19 21:00,Atlanta
-PSG,Botafogo,2025-06-20 03:00,Los Angeles
-Palmeiras,Al Ahly,2025-06-19 18:00,New York
-Seattle Sunders,Atletico Madrid,2025-06-20 00:00,Seattle
-Bayern Monaco,Boca Juniors,2025-06-21 03:00,Miami
-Benfica,Auckland City,2025-06-20 18:00,Orlando
-Flamengo,Chelsea,2025-06-20 20:00,Philadelphia
-Mamelodi Sundowns,Borussia Dortmund,2025-06-21 18:00,Cincinnati
-River Plate,CF Monterrey,2025-06-22 03:00,Los Angeles
-Fluminense,Ulsan,2025-06-22 00:00,New York
-Inter,Urawa,2025-06-21 21:00,Seattle
-Manchester City,Al Ain,2025-06-23 03:00,Atlanta
-Real Madrid,Pachuca,2025-06-22 21:00,Charlotte
-Juventus,Wydad,2025-06-22 18:00,Philadelphia
-Salisburgo,Al Hilal,2025-06-23 00:00,Washington
-Atletico Madrid,Botafogo,2025-06-23 21:00,Los Angeles
-Inter Miami,Palmeiras,2025-06-24 03:00,Miami
-Porto,Al Ahly,2025-06-24 03:00,New York
-Seattle Sounders,PSG,2025-06-23 21:00,Seattle
-Benfica,Bayern Monaco,2025-06-24 21:00,Charlotte
-Auckland City,Boca Juniors,2025-06-24 21:00,Nashville
-Esperance,Chelsea,2025-06-25 03:00,Philadelphia
-Leon,Flamengo,2025-06-25 03:00,Orlando
-Borussia Dortmund,Ulsan,2025-06-25 21:00,Cincinnati
-Urawa,CF Monterrey,2025-06-26 03:00,Los Angeles
-Mamelodi Sundowns,Fluminense,2025-06-25 21:00,Miami
-Inter,River Plate,2025-06-26 03:00,Seattle
-Al Hilal,Pachuca,2025-06-27 03:00,Nashville
-Juventus,Manchester City,2025-06-26 21:00,Orlando
-Salisburgo,Real Madrid,2025-06-27 03:00,Philadelphia
-Wydad,Al Ain,2025-06-26 21:00,Washington
+Squadra1,Squadra2,Data,Ora,Stadio
+Al Ahly,Inter Miami,2025-06-15,02:00,Miami
+Bayern Monaco,Auckland City,2025-06-15,18:00,Cincinnati
+PSG,Atletico Madrid,2025-06-15,21:00,Los Angeles
+Palmeiras,Porto,2025-06-16,00:00,New York
+Botafogo,Seattle Sunders,2025-06-16,04:00,Seattle
+Chelsea,Leon,2025-06-16,21:00,Atlanta
+Boca Juniors,Benfica,2025-06-17,00:00,Miami
+Flamengo,Esperance,2025-06-17,03:00,Philadelphia
+Monterrey,Inter,2025-06-18,03:00,Los Angeles
+Fluminense,Borussia Dortmund,2025-06-17,18:00,New York
+Ulsan,Mamelodi Sundowns,2025-06-17,18:00,Orlando
+River Plate,Urawa,2025-06-17,21:00,Seattle
+Pachuca,Salisburgo,2025-06-19,00:00,Cincinnati
+Real Madrid,Al Hilal,2025-06-18,21:00,Miami
+Manchester City,Wydad,2025-06-18,18:00,Philadelphia
+Al Ain,Juventus,2025-06-19,03:00,Washington
+Inter Miami,Porto,2025-06-19,21:00,Atlanta
+PSG,Botafogo,2025-06-20,03:00,Los Angeles
+Palmeiras,Al Ahly,2025-06-19,18:00,New York
+Seattle Sunders,Atletico Madrid,2025-06-20,00:00,Seattle
+Bayern Monaco,Boca Juniors,2025-06-21,03:00,Miami
+Benfica,Auckland City,2025-06-20,18:00,Orlando
+Flamengo,Chelsea,2025-06-20,20:00,Philadelphia
+Mamelodi Sundowns,Borussia Dortmund,2025-06-21,18:00,Cincinnati
+River Plate,CF Monterrey,2025-06-22,03:00,Los Angeles
+Fluminense,Ulsan,2025-06-22,00:00,New York
+Inter,Urawa,2025-06-21,21:00,Seattle
+Manchester City,Al Ain,2025-06-23,03:00,Atlanta
+Real Madrid,Pachuca,2025-06-22,21:00,Charlotte
+Juventus,Wydad,2025-06-22,18:00,Philadelphia
+Salisburgo,Real Madrid,2025-06-23,03:00,Washington
+Atletico Madrid,Botafogo,2025-06-23,21:00,Los Angeles
+Inter Miami,Palmeiras,2025-06-24,03:00,Miami
+Porto,Al Ahly,2025-06-24,03:00,New York
+Seattle Sounders,PSG,2025-06-23,21:00,Seattle
+Benfica,Bayern Monaco,2025-06-24,21:00,Charlotte
+Auckland City,Boca Juniors,2025-06-24,21:00,Nashville
+Esperance,Chelsea,2025-06-25,03:00,Philadelphia
+Leon,Flamengo,2025-06-25,03:00,Orlando
+Borussia Dortmund,Ulsan,2025-06-25,21:00,Cincinnati
+Urawa,CF Monterrey,2025-06-26,03:00,Los Angeles
+Mamelodi Sundowns,Fluminense,2025-06-25,21:00,Miami
+Inter,River Plate,2025-06-26,03:00,Seattle
+Al Hilal,Pachuca,2025-06-27,03:00,Nashville
+Juventus,Manchester City,2025-06-26,21:00,Orlando
+Salisburgo,Real Madrid,2025-06-27,03:00,Philadelphia
+Wydad,Al Ain,2025-06-26,21:00,Washington
