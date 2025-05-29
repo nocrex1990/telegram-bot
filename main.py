@@ -71,6 +71,47 @@ async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("\n".join(messaggi))
 
+async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        with open("partite.csv", newline='', encoding='utf-8') as file:
+            reader = csv.DictReader(file)
+            partite_per_data.clear()
+            partite_lookup.clear()
+            for i, riga in enumerate(reader, start=1):
+                partita = {
+                    "id": str(i),
+                    "data": riga["Data"].strip(),
+                    "ora": riga["Ora"].strip(),
+                    "s1": riga["Squadra1"].strip(),
+                    "s2": riga["Squadra2"].strip(),
+                    "stadio": riga["Stadio"].strip()
+                }
+                partite_per_data[partita["data"]].append(partita)
+                partite_lookup[str(i)] = partita
+
+        user_id = str(update.effective_user.id)
+        keyboard = []
+        now = datetime.now()
+
+        for data in partite_per_data:
+            disponibili = any(
+                p["id"] not in scommesse_utente[user_id] and
+                datetime.strptime(f"{p['data']} {p['ora']}", "%Y-%m-%d %H:%M") > now
+                for p in partite_per_data[data]
+            )
+            if disponibili:
+                keyboard.append([InlineKeyboardButton(data, callback_data=f"data:{data}")])
+
+        if keyboard:
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await update.message.reply_text("📅 Seleziona una data:", reply_markup=reply_markup)
+        else:
+            await update.message.reply_text("✅ Nessuna partita disponibile al momento per essere scommessa.")
+
+    except Exception as e:
+        print("❌ Errore in /partite:", e)
+        await update.message.reply_text("Errore nella lettura delle partite.")
+
 # ... (resto invariato)
 
 application.add_handler(CommandHandler("start", start))
