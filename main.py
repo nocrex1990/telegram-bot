@@ -112,6 +112,26 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
         print("❌ Errore in /partite:", e)
         await update.message.reply_text("Errore nella lettura delle partite.")
 
+async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.effective_user.id)
+    now = datetime.now()
+    partite_scommesse = scommesse_utente.get(user_id, {})
+
+    keyboard = []
+    for pid, scommessa in partite_scommesse.items():
+        partita = partite_lookup.get(pid)
+        if not partita:
+            continue
+        data_ora = datetime.strptime(f"{partita['data']} {partita['ora']}", "%Y-%m-%d %H:%M")
+        if data_ora > now:
+            desc = f"{partita['s1']} vs {partita['s2']} ({partita['ora']})"
+            keyboard.append([InlineKeyboardButton(desc, callback_data=f"modifica:{pid}")])
+
+    if not keyboard:
+        await update.message.reply_text("Non hai scommesse modificabili al momento.")
+    else:
+        await update.message.reply_text("✏️ Seleziona una scommessa da modificare:", reply_markup=InlineKeyboardMarkup(keyboard))
+
 # ... (resto invariato)
 
 application.add_handler(CommandHandler("start", start))
