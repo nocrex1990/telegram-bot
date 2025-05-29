@@ -109,7 +109,8 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("✅ Nessuna partita disponibile al momento per essere scommessa.")
 
     except Exception as e:
-        print("❌ Errore in /partite:", e)
+        import traceback
+        traceback.print_exc()
         await update.message.reply_text("Errore nella lettura delle partite.")
 
 async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
