@@ -108,98 +108,34 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("✅ Nessuna partita disponibile al momento per essere scommessa.")
 
-    except Exception as e:
+    except Exception:
         import traceback
         traceback.print_exc()
         await update.message.reply_text("Errore nella lettura delle partite.")
 
-async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = str(update.effective_user.id)
-    now = datetime.now()
-    partite_scommesse = scommesse_utente.get(user_id, {})
+async def handle_webhook(request):
+    data = await request.json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return web.Response(text="ok")
 
-    keyboard = []
-    for pid, scommessa in partite_scommesse.items():
-        partita = partite_lookup.get(pid)
-        if not partita:
-            continue
-        data_ora = datetime.strptime(f"{partita['data']} {partita['ora']}", "%Y-%m-%d %H:%M")
-        if data_ora > now:
-            desc = f"{partita['s1']} vs {partita['s2']} ({partita['ora']})"
-            keyboard.append([InlineKeyboardButton(desc, callback_data=f"modifica:{pid}")])
+async def run():
+    app = web.Application()
+    app.router.add_post(WEBHOOK_PATH, handle_webhook)
+    app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
+    await site.start()
 
-    if not keyboard:
-        await update.message.reply_text("Non hai scommesse modificabili al momento.")
-    else:
-        await update.message.reply_text("✏️ Seleziona una scommessa da modificare:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await application.initialize()
+    await application.start()
+    info = await application.bot.get_webhook_info()
+    if info.url != WEBHOOK_URL:
+        await application.bot.set_webhook(url=WEBHOOK_URL)
 
-async def handle_modifica_selezione(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    partita_id = query.data.split(":")[1]
-    context.user_data["modifica"] = True
-    context.user_data["partita_id"] = partita_id
+    print(f"✅ Webhook attivo su {WEBHOOK_URL}")
+    await application.updater.wait()
 
-    buttons = [
-        [InlineKeyboardButton("1", callback_data="modifica_esito:1")],
-        [InlineKeyboardButton("X", callback_data="modifica_esito:X")],
-        [InlineKeyboardButton("2", callback_data="modifica_esito:2")]
-    ]
-    await query.edit_message_text("✏️ Seleziona il nuovo esito:", reply_markup=InlineKeyboardMarkup(buttons))
-
-async def handle_modifica_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    esito = query.data.split(":")[1]
-    context.user_data["esito"] = esito
-    await query.edit_message_text("Scrivi il nuovo risultato esatto (es. 2-1):")
-
-async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    risultato = update.message.text.strip()
-    if "-" not in risultato:
-        await update.message.reply_text("Formato non valido. Usa es: 2-1")
-        return
-
-    try:
-        g1, g2 = map(int, risultato.split("-"))
-    except:
-        await update.message.reply_text("Numeri non validi.")
-        return
-
-    esito = context.user_data.get("esito")
-    if (esito == "1" and g1 <= g2) or (esito == "2" and g2 <= g1) or (esito == "X" and g1 != g2):
-        await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto.")
-        return
-
-    partita_id = context.user_data.get("partita_id")
-    user_id = str(update.effective_user.id)
-    partita = partite_lookup.get(partita_id)
-
-    scommesse_utente[user_id][partita_id] = {
-        "user_id": user_id,
-        "partita_id": partita_id,
-        "esito": esito,
-        "risultato": risultato,
-        "desc": f"{partita['s1']} vs {partita['s2']}"
-    }
-
-    with open("scommesse.csv", "w", newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=["user_id", "partita_id", "esito", "risultato", "desc"])
-        writer.writeheader()
-        for uid in scommesse_utente:
-            for sid in scommesse_utente[uid]:
-                writer.writerow(scommesse_utente[uid][sid])
-
-    await update.message.reply_text(f"✅ {'Modifica' if context.user_data.get('modifica') else 'Scommessa'} registrata per {partita['s1']} vs {partita['s2']}")
-    context.user_data.clear()
-
-# ... (resto invariato)
-
-application.add_handler(CommandHandler("start", start))
-application.add_handler(CommandHandler("info", info))
-application.add_handler(CommandHandler("partite", partite))
-application.add_handler(CommandHandler("modifica", modifica))
-application.add_handler(CommandHandler("riepilogo", riepilogo))
-application.add_handler(CallbackQueryHandler(handle_modifica_selezione, pattern=r"^modifica:.*"))
-application.add_handler(CallbackQueryHandler(handle_modifica_esito, pattern=r"^modifica_esito:.*"))
-application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_risultato))
+if __name__ == "__main__":
+    asyncio.run(run())
