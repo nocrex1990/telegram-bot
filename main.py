@@ -135,7 +135,7 @@ async def run():
         await application.bot.set_webhook(url=WEBHOOK_URL)
 
     print(f"✅ Webhook attivo su {WEBHOOK_URL}")
-    await application.updater.wait()
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
     asyncio.run(run())
