@@ -132,6 +132,66 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("✏️ Seleziona una scommessa da modificare:", reply_markup=InlineKeyboardMarkup(keyboard))
 
+async def handle_modifica_selezione(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    partita_id = query.data.split(":")[1]
+    context.user_data["modifica"] = True
+    context.user_data["partita_id"] = partita_id
+
+    buttons = [
+        [InlineKeyboardButton("1", callback_data="modifica_esito:1")],
+        [InlineKeyboardButton("X", callback_data="modifica_esito:X")],
+        [InlineKeyboardButton("2", callback_data="modifica_esito:2")]
+    ]
+    await query.edit_message_text("✏️ Seleziona il nuovo esito:", reply_markup=InlineKeyboardMarkup(buttons))
+
+async def handle_modifica_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    esito = query.data.split(":")[1]
+    context.user_data["esito"] = esito
+    await query.edit_message_text("Scrivi il nuovo risultato esatto (es. 2-1):")
+
+async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    risultato = update.message.text.strip()
+    if "-" not in risultato:
+        await update.message.reply_text("Formato non valido. Usa es: 2-1")
+        return
+
+    try:
+        g1, g2 = map(int, risultato.split("-"))
+    except:
+        await update.message.reply_text("Numeri non validi.")
+        return
+
+    esito = context.user_data.get("esito")
+    if (esito == "1" and g1 <= g2) or (esito == "2" and g2 <= g1) or (esito == "X" and g1 != g2):
+        await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto.")
+        return
+
+    partita_id = context.user_data.get("partita_id")
+    user_id = str(update.effective_user.id)
+    partita = partite_lookup.get(partita_id)
+
+    scommesse_utente[user_id][partita_id] = {
+        "user_id": user_id,
+        "partita_id": partita_id,
+        "esito": esito,
+        "risultato": risultato,
+        "desc": f"{partita['s1']} vs {partita['s2']}"
+    }
+
+    with open("scommesse.csv", "w", newline='', encoding='utf-8') as f:
+        writer = csv.DictWriter(f, fieldnames=["user_id", "partita_id", "esito", "risultato", "desc"])
+        writer.writeheader()
+        for uid in scommesse_utente:
+            for sid in scommesse_utente[uid]:
+                writer.writerow(scommesse_utente[uid][sid])
+
+    await update.message.reply_text(f"✅ {'Modifica' if context.user_data.get('modifica') else 'Scommessa'} registrata per {partita['s1']} vs {partita['s2']}")
+    context.user_data.clear()
+
 # ... (resto invariato)
 
 application.add_handler(CommandHandler("start", start))
