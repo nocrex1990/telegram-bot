@@ -156,7 +156,7 @@ async def handle_match_selection(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("X", callback_data="esito:X")],
         [InlineKeyboardButton("2", callback_data="esito:2")]
     ]
-    await query.edit_message_text("Scegli l'esito della partita:", reply_markup=InlineKeyboardMarkup(buttons)))
+    await query.edit_message_text("Scegli l'esito della partita:", reply_markup=InlineKeyboardMarkup(buttons))
 
 
 async def handle_esito_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -250,7 +250,7 @@ async def handle_modifica_selezione(update: Update, context: ContextTypes.DEFAUL
         [InlineKeyboardButton("X", callback_data="esito:X")],
         [InlineKeyboardButton("2", callback_data="esito:2")]
     ]
-    await query.edit_message_text("✏️ Seleziona il nuovo esito:", reply_markup=InlineKeyboardMarkup(buttons)), reply_markup=InlineKeyboardMarkup(buttons))
+    await query.edit_message_text("✏️ Seleziona il nuovo esito:", reply_markup=InlineKeyboardMarkup(buttons))
 
 
 async def handle_webhook(request):
