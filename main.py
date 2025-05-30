@@ -108,10 +108,9 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("✅ Nessuna partita disponibile al momento per essere scommessa.")
 
-    except Exception:
-        import traceback
-        traceback.print_exc()
+    except Exception as e:
         await update.message.reply_text("Errore nella lettura delle partite.")
+        raise e
 
 async def handle_webhook(request):
     data = await request.json()
