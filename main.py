@@ -136,5 +136,10 @@ async def run():
     print(f"✅ Webhook attivo su {WEBHOOK_URL}")
     await asyncio.Event().wait()
 
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("info", info))
+application.add_handler(CommandHandler("partite", partite))
+application.add_handler(CommandHandler("riepilogo", riepilogo))
+
 if __name__ == "__main__":
     asyncio.run(run())
