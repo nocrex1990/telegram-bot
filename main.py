@@ -284,10 +284,12 @@ async def run():
     await application.initialize()
     await application.start()
     info = await application.bot.get_webhook_info()
+    print("🔁 Verifica stato webhook attuale:", info.url)
     if info.url != WEBHOOK_URL:
         await application.bot.set_webhook(url=WEBHOOK_URL)
+        print("✅ Webhook impostato")
 
-    print(f"✅ Webhook attivo su {WEBHOOK_URL}")
+    print(f"🌐 Webhook finale: {WEBHOOK_URL}")
     await asyncio.Event().wait()
 
 # === MAIN ===
