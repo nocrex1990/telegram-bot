@@ -18,8 +18,11 @@ partite_per_data = defaultdict(list)
 partite_lookup = {}
 scommesse_utente = defaultdict(dict)
 
-if os.path.exists("scommesse.csv"):
-    with open("scommesse.csv", newline='', encoding='utf-8') as file:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SCOMMESSE_PATH = os.path.join(BASE_DIR, "scommesse.csv")
+
+if os.path.exists(SCOMMESSE_PATH):
+    with open(SCOMMESSE_PATH, newline='', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
             scommesse_utente[row["user_id"]][row["partita_id"]] = row
@@ -196,13 +199,14 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "desc": f"{partita['s1']} vs {partita['s2']}"
     }
 
-    with open("scommesse.csv", "w", newline='', encoding='utf-8') as f:
+    with open(SCOMMESSE_PATH, "w", newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=["user_id", "partita_id", "esito", "risultato", "desc"])
         writer.writeheader()
         for uid in scommesse_utente:
             for sid in scommesse_utente[uid]:
                 writer.writerow(scommesse_utente[uid][sid])
 
+    print(f"✅ Scrittura scommessa in {SCOMMESSE_PATH}")
     await update.message.reply_text(f"✅ Scommessa registrata per {partita['s1']} vs {partita['s2']}")
     context.user_data.clear()
 
