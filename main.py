@@ -25,10 +25,13 @@ SCOMMESSE_PATH = os.path.join(BASE_DIR, "scommesse.csv")
 
 GOOGLE_SHEET_NAME = "Scommesse Mondiale"
 
-credentials = Credentials.from_service_account_file(
-    os.path.join(BASE_DIR, "google-credentials.json"),
+import json
+credentials_info = json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"])
+credentials = Credentials.from_service_account_info(
+    credentials_info,
     scopes=["https://www.googleapis.com/auth/spreadsheets"]
 )
+
 gs_client = gspread.authorize(credentials)
 try:
     sheet = gs_client.open(GOOGLE_SHEET_NAME).sheet1
