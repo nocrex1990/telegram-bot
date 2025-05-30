@@ -5,6 +5,8 @@ import csv
 from aiohttp import web
 from collections import defaultdict
 import asyncio
+import gspread
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
@@ -20,6 +22,19 @@ scommesse_utente = defaultdict(dict)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SCOMMESSE_PATH = os.path.join(BASE_DIR, "scommesse.csv")
+
+GOOGLE_SHEET_NAME = "Scommesse Mondiale"
+
+credentials = Credentials.from_service_account_file(
+    os.path.join(BASE_DIR, "google-credentials.json"),
+    scopes=["https://www.googleapis.com/auth/spreadsheets"]
+)
+gs_client = gspread.authorize(credentials)
+try:
+    sheet = gs_client.open(GOOGLE_SHEET_NAME).sheet1
+except Exception as e:
+    print(f"❌ Errore nell'accesso a Google Sheet: {e}")
+    sheet = None
 
 if os.path.exists(SCOMMESSE_PATH):
     with open(SCOMMESSE_PATH, newline='', encoding='utf-8') as file:
@@ -207,6 +222,10 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 writer.writerow(scommesse_utente[uid][sid])
 
     print(f"✅ Scrittura scommessa in {SCOMMESSE_PATH}")
+
+    if sheet:
+        sheet.append_row([user_id, partita_id, esito, risultato, partita['s1'] + " vs " + partita['s2']])
+        print("✅ Scommessa salvata anche su Google Sheets")
     await update.message.reply_text(f"✅ Scommessa registrata per {partita['s1']} vs {partita['s2']}")
     context.user_data.clear()
 
