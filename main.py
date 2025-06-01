@@ -86,3 +86,33 @@ def scrivi_scommessa_su_google_sheet(sheet, riga):
 
 # Modifica apportata: corretta indentazione dopo if sheet: (riga 282 circa)
 # La chiamata a scrivi_scommessa_su_google_sheet(sheet, riga) era fuori blocco e ha generato IndentationError
+
+# === AVVIO SERVER AIOHTTP CON WEBHOOK ===
+
+async def handle_webhook(request):
+    data = await request.json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return web.Response(text="ok")
+
+async def run():
+    app = web.Application()
+    app.router.add_post(WEBHOOK_PATH, handle_webhook)
+    app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render"))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
+    await site.start()
+
+    await application.initialize()
+    await application.start()
+    info = await application.bot.get_webhook_info()
+    if info.url != WEBHOOK_URL:
+        await application.bot.set_webhook(url=WEBHOOK_URL)
+
+    logging.info(f"🌐 Webhook finale: {WEBHOOK_URL}")
+    logging.info("🚀 Bot e server aiohttp avviati correttamente")
+    await asyncio.Event().wait()
+
+if __name__ == "__main__":
+    asyncio.run(run())
