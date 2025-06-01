@@ -221,6 +221,7 @@ async def handle_match_selection(update: Update, context: ContextTypes.DEFAULT_T
         [InlineKeyboardButton("X", callback_data="esito:X")],
         [InlineKeyboardButton("2", callback_data="esito:2")]
     ]
+    buttons.append([InlineKeyboardButton("❌ Annulla", callback_data="annulla")])
     await query.edit_message_text("Scegli l'esito della partita:", reply_markup=InlineKeyboardMarkup(buttons))
 
 # Callback - selezione esito (1/X/2)
@@ -229,7 +230,8 @@ async def handle_esito_selection(update: Update, context: ContextTypes.DEFAULT_T
     await query.answer()
     esito = query.data.split(":")[1]
     context.user_data["esito"] = esito
-    await query.edit_message_text("Scrivi il risultato esatto (es. 2-1):")
+    buttons = [[InlineKeyboardButton("❌ Annulla", callback_data="annulla")]]
+    await query.edit_message_text("Scrivi il risultato esatto (es. 2-1):", reply_markup=InlineKeyboardMarkup(buttons))
 
 # Invio manuale del risultato esatto, con verifica e salvataggio CSV + Google Sheet
 async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -249,7 +251,7 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     esito = context.user_data.get("esito")
     if (esito == "1" and g1 <= g2) or (esito == "2" and g2 <= g1) or (esito == "X" and g1 != g2):
-        await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto.")
+        await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto. Per favore reinseriscilo nel formato corretto (es. 2-1).")
         return
 
     partita_id = context.user_data.get("partita_id")
@@ -282,6 +284,13 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ Scommessa registrata per {partita['s1']} vs {partita['s2']}")
     context.user_data.clear()
 
+# === CALLBACK ANNULLA ===
+async def handle_annulla(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    context.user_data.clear()
+    await query.edit_message_text("❌ Operazione annullata. Puoi ricominciare con /partite o /start")
+
 # === REGISTRAZIONE HANDLER ===
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("info", info))
@@ -290,6 +299,7 @@ application.add_handler(CommandHandler("riepilogo", riepilogo))
 application.add_handler(CallbackQueryHandler(handle_date_selection, pattern=r"^data:.*"))
 application.add_handler(CallbackQueryHandler(handle_match_selection, pattern=r"^match:.*"))
 application.add_handler(CallbackQueryHandler(handle_esito_selection, pattern=r"^esito:.*"))
+application.add_handler(CallbackQueryHandler(handle_annulla, pattern=r"^annulla$"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_risultato))
 
 # === WEBHOOK SERVER ===
