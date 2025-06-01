@@ -65,7 +65,20 @@ def scrivi_scommessa_su_google_sheet(sheet, riga):
     try:
         logging.info("✍️ Tentativo di scrittura su Google Sheets...")
         sys.stdout.flush()
+
+        # Scrive intestazione se il foglio è vuoto
+        if not sheet.get_all_values():
+            header = ["user_id", "nome_utente", "partita_id", "esito", "risultato", "desc"]
+            sheet.append_row(header)
+            logging.info(f"📌 Intestazione aggiunta: {header}")
+
         sheet.append_row(riga)
+        logging.info(f"✅ Riga scritta: {riga}")
+        sys.stdout.flush()
+    except Exception as e:
+        logging.error(f"❌ Errore durante la scrittura su Google Sheets: {e}")
+        sys.stdout.flush()
+        print(f"❌ Errore durante la scrittura su Google Sheets: {e}")
         logging.info(f"✅ Riga scritta: {riga}")
         sys.stdout.flush()
     except Exception as e:
@@ -261,7 +274,9 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logging.info(f"✅ Scrittura scommessa in {SCOMMESSE_PATH}")
 
     if sheet:
-        riga = [user_id, partita_id, esito, risultato, f"{partita['s1']} vs {partita['s2']}"]
+        user = update.effective_user
+    nome_utente = user.username or f"{user.first_name} {user.last_name or ''}".strip()
+    riga = [user_id, nome_utente, partita_id, esito, risultato, f"{partita['s1']} vs {partita['s2']}"]
         scrivi_scommessa_su_google_sheet(sheet, riga)
 
     await update.message.reply_text(f"✅ Scommessa registrata per {partita['s1']} vs {partita['s2']}")
