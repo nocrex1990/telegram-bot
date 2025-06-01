@@ -273,25 +273,30 @@ async def handle_webhook(request):
 
 # === AVVIO APPLICAZIONE ===
 async def run():
+    # Avvio server aiohttp per ricevere il webhook
     app = web.Application()
     app.router.add_post(WEBHOOK_PATH, handle_webhook)
     app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render"))
+
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, "0.0.0.0", int(os.environ.get("PORT", 10000)))
     await site.start()
 
+    # Avvio bot telegram
     await application.initialize()
     await application.start()
+
     info = await application.bot.get_webhook_info()
     print("🔁 Verifica stato webhook attuale:", info.url)
     if info.url != WEBHOOK_URL:
         await application.bot.set_webhook(url=WEBHOOK_URL)
         print("✅ Webhook impostato")
+    else:
+        print("✅ Webhook già attivo")
 
     print(f"🌐 Webhook finale: {WEBHOOK_URL}")
-    await asyncio.Event().wait()
+    print("🚀 Bot e server aiohttp avviati correttamente")
 
 # === MAIN ===
-loop = asyncio.get_event_loop()
-loop.run_until_complete(run())
+asyncio.run(run())
