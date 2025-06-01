@@ -53,11 +53,16 @@ if os.path.exists(SCOMMESSE_PATH):
 
 # === FUNZIONE DI SCRITTURA SU GOOGLE SHEET ===
 def scrivi_scommessa_su_google_sheet(sheet, riga):
+    import sys
     try:
         print("✍️ Tentativo di scrittura su Google Sheets...")
+        sys.stdout.flush()
         sheet.append_row(riga)
         print(f"✅ Riga scritta: {riga}")
+        sys.stdout.flush()
     except Exception as e:
+        print(f"❌ Errore durante la scrittura su Google Sheets: {e}")
+        sys.stdout.flush()
         print(f"❌ Errore durante la scrittura su Google Sheets: {e}")
 
 # === COMANDI E HANDLER ===
