@@ -1,5 +1,14 @@
 # === BOT TELEGRAM MONDIALE PER CLUB ===
 
+import logging
+
+# Configura il logging su file per Render
+logging.basicConfig(
+    filename="bot.log",
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 # Import delle librerie principali
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, CallbackQueryHandler, MessageHandler, filters
@@ -39,9 +48,9 @@ credentials = Credentials.from_service_account_info(
 gs_client = gspread.authorize(credentials)
 try:
     sheet = gs_client.open(GOOGLE_SHEET_NAME).sheet1
-    print("✅ Collegato al Google Sheet!")
+    logging.info("✅ Collegato al Google Sheet!")
 except Exception as e:
-    print(f"❌ Errore nell'accesso a Google Sheet: {e}")
+    logging.error(f"❌ Errore nell'accesso a Google Sheet: {e}")
     sheet = None
 
 # === CARICAMENTO SCOMMESSE LOCALI ===
@@ -55,13 +64,13 @@ if os.path.exists(SCOMMESSE_PATH):
 def scrivi_scommessa_su_google_sheet(sheet, riga):
     import sys
     try:
-        print("✍️ Tentativo di scrittura su Google Sheets...")
+        logging.info("✍️ Tentativo di scrittura su Google Sheets...")
         sys.stdout.flush()
         sheet.append_row(riga)
-        print(f"✅ Riga scritta: {riga}")
+        logging.info(f"✅ Riga scritta: {riga}")
         sys.stdout.flush()
     except Exception as e:
-        print(f"❌ Errore durante la scrittura su Google Sheets: {e}")
+        logging.error(f"❌ Errore durante la scrittura su Google Sheets: {e}")
         sys.stdout.flush()
         print(f"❌ Errore durante la scrittura su Google Sheets: {e}")
 
@@ -213,8 +222,8 @@ async def handle_esito_selection(update: Update, context: ContextTypes.DEFAULT_T
 # Invio manuale del risultato esatto, con verifica e salvataggio CSV + Google Sheet
 async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # DEBUG: controllo oggetto Google Sheet
-    print("🧪 sheet è None?", sheet is None)
-    print("📄 sheet =", type(sheet), sheet)
+    logging.info(f"🧪 sheet è None? {sheet is None}")
+    logging.info(f"📄 sheet = {type(sheet)} {sheet}")
     risultato = update.message.text.strip()
     if "-" not in risultato:
         await update.message.reply_text("Formato non valido. Usa es: 2-1")
@@ -250,7 +259,7 @@ async def handle_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
             for sid in scommesse_utente[uid]:
                 writer.writerow(scommesse_utente[uid][sid])
 
-    print(f"✅ Scrittura scommessa in {SCOMMESSE_PATH}")
+    logging.info(f"✅ Scrittura scommessa in {SCOMMESSE_PATH}")
 
     if sheet:
         riga = [user_id, partita_id, esito, risultato, f"{partita['s1']} vs {partita['s2']}"]
@@ -293,15 +302,15 @@ async def run():
     await application.start()
 
     info = await application.bot.get_webhook_info()
-    print("🔁 Verifica stato webhook attuale:", info.url)
+    logging.info(f"🔁 Verifica stato webhook attuale: {info.url}")
     if info.url != WEBHOOK_URL:
         await application.bot.set_webhook(url=WEBHOOK_URL)
-        print("✅ Webhook impostato")
+        logging.info("✅ Webhook impostato")
     else:
-        print("✅ Webhook già attivo")
+        logging.info("✅ Webhook già attivo")
 
-    print(f"🌐 Webhook finale: {WEBHOOK_URL}")
-    print("🚀 Bot e server aiohttp avviati correttamente")
+    logging.info(f"🌐 Webhook finale: {WEBHOOK_URL}")
+    logging.info("🚀 Bot e server aiohttp avviati correttamente")
 
 # === MAIN ===
 asyncio.run(run())
