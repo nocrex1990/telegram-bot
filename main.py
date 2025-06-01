@@ -289,6 +289,17 @@ async def handle_webhook(request):
 async def run():
     # Avvio server aiohttp per ricevere il webhook
     app = web.Application()
+
+    # === ENDPOINT DI DEBUG PER VISIONARE IL FILE LOG ===
+    async def mostra_log(request):
+        try:
+            with open("bot.log", "r", encoding="utf-8") as f:
+                contenuto = f.read()[-4000:]
+            return web.Response(text=contenuto, content_type="text/plain")
+        except Exception as e:
+            return web.Response(text=f"Errore lettura log: {e}", status=500)
+
+    app.router.add_get("/log", mostra_log)
     app.router.add_post(WEBHOOK_PATH, handle_webhook)
     app.router.add_get("/", lambda request: web.Response(text="Bot attivo su Render"))
 
