@@ -43,7 +43,7 @@ GOOGLE_SHEET_NAME = "Scommesse Mondiale Club FIFA 2025"
 try:
     credentials = Credentials.from_service_account_file(
         os.path.join(BASE_DIR, "google-credentials.json"),
-        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+        scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     )
     gs_client = gspread.authorize(credentials)
     sheet = gs_client.open(GOOGLE_SHEET_NAME).sheet1
