@@ -1,10 +1,10 @@
-
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 from telegram_bot_data import scommesse_utente, salva_scommessa_locale, partite_lookup
 from google_utils import get_google_sheet, scrivi_su_google_sheet
 from config import application
 
+# Lista partite demo
 PARTITE = [
     {"id": "match1", "desc": "Al Ahly vs Inter Miami - 15/06 ore 02:00"},
     {"id": "match2", "desc": "Bayern Monaco vs Auckland City - 15/06 ore 18:00"},
@@ -43,18 +43,17 @@ async def scelta_partita(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("X", callback_data="X"),
          InlineKeyboardButton("2", callback_data="2")]
     ]
-    await query.edit_message_text(f"📌 Partita selezionata: {partita_desc}
-
-Scegli l’esito:", reply_markup=InlineKeyboardMarkup(keyboard))
+    await query.edit_message_text(
+        f"📌 Partita selezionata: {partita_desc}\n\nScegli l’esito:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
 
 async def scelta_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     esito = query.data
     context.user_data["esito"] = esito
-    await query.edit_message_text(f"✅ Esito selezionato: {esito}
-
-✍️ Ora inviami il risultato esatto (es. 2-1):")
+    await query.edit_message_text(f"✅ Esito selezionato: {esito}\n\n✍️ Ora inviami il risultato esatto (es. 2-1):")
 
 async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE):
     risultato = update.message.text.strip()
@@ -76,7 +75,9 @@ async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE
     if sheet:
         scrivi_su_google_sheet(sheet, riga)
 
-    await update.message.reply_text(f"✅ Scommessa registrata:\n\n📝 {partita_desc}\n📊 Esito: {esito}\n🎯 Risultato: {risultato}")
+    await update.message.reply_text(
+        f"✅ Scommessa registrata:\n\n📝 {partita_desc}\n📊 Esito: {esito}\n🎯 Risultato: {risultato}"
+    )
     context.user_data.clear()
 
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
