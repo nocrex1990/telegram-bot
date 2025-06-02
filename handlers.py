@@ -110,10 +110,28 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📊 La funzione di riepilogo sarà presto disponibile.\n"
-        "Potrai visualizzare tutte le tue scommesse registrate."
-    )
+    sheet = get_google_sheet()
+    if not sheet:
+        await update.message.reply_text("⚠️ Impossibile accedere al riepilogo al momento.")
+        return
+
+    user_id = str(update.effective_user.id)
+    tutte = sheet.get_all_records()
+    scommesse_utente = [row for row in tutte if row.get("user_id") == user_id]
+
+    if not scommesse_utente:
+        await update.message.reply_text("📭 Non hai ancora inserito nessuna scommessa.")
+        return
+
+    msg = "📊 *Le tue scommesse registrate:*\n"
+    for r in scommesse_utente:
+        msg += (
+            f"\n📝 {r.get('desc', 'Partita sconosciuta')}"
+            f"\n📊 Esito: {r.get('esito', '?')}"
+            f"\n🎯 Risultato: {r.get('risultato', '?')}\n"
+        )
+
+    await update.message.reply_text(msg, parse_mode="Markdown")
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
