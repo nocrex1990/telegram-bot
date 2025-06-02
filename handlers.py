@@ -1,14 +1,26 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
-from telegram_bot_data import scommesse_utente, salva_scommessa_locale, partite_lookup
+from telegram_bot_data import salva_scommessa_locale
 from google_utils import get_google_sheet, scrivi_su_google_sheet
 from config import application
+from datetime import datetime
 
+# === DATI PARTITE ===
 PARTITE = [
-    {"id": "match1", "desc": "Al Ahly vs Inter Miami - 15/06 ore 02:00"},
-    {"id": "match2", "desc": "Bayern Monaco vs Auckland City - 15/06 ore 18:00"},
-    {"id": "match3", "desc": "PSG vs Atletico Madrid - 15/06 ore 21:00"},
+    {"id": "match1", "desc": "Al Ahly vs Inter Miami - 15/06 ore 02:00", "data": "2025-06-15 02:00"},
+    {"id": "match2", "desc": "Bayern Monaco vs Auckland City - 15/06 ore 18:00", "data": "2025-06-15 18:00"},
+    {"id": "match3", "desc": "PSG vs Atletico Madrid - 15/06 ore 21:00", "data": "2025-06-15 21:00"},
 ]
+
+def get_partita(partita_id):
+    return next((p for p in PARTITE if p["id"] == partita_id), None)
+
+def partita_scaduta(partita):
+    try:
+        inizio = datetime.strptime(partita["data"], "%Y-%m-%d %H:%M")
+        return datetime.now() > inizio
+    except Exception:
+        return False
 
 def setup_handlers():
     application.add_handler(CommandHandler("start", start))
@@ -19,6 +31,7 @@ def setup_handlers():
     application.add_handler(CommandHandler("debug", debug))
     application.add_handler(CallbackQueryHandler(scelta_partita, pattern="^match"))
     application.add_handler(CallbackQueryHandler(scelta_esito, pattern="^(1|X|2)$"))
+    application.add_handler(CallbackQueryHandler(scelta_modifica, pattern="^mod_"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, inserisci_risultato))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -42,10 +55,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(messaggio, parse_mode="Markdown")
 
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        [InlineKeyboardButton(p["desc"], callback_data=p["id"])]
-        for p in PARTITE
-    ]
+    keyboard = [[InlineKeyboardButton(p["desc"], callback_data=p["id"])] for p in PARTITE]
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("📅 Seleziona una partita:", reply_markup=reply_markup)
 
@@ -53,9 +63,14 @@ async def scelta_partita(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     partita_id = query.data
+    partita = get_partita(partita_id)
+    if not partita or partita_scaduta(partita):
+        await query.edit_message_text("❌ La partita è già iniziata o non è valida.")
+        return
+
     context.user_data["partita_id"] = partita_id
-    partita_desc = next((p["desc"] for p in PARTITE if p["id"] == partita_id), "")
-    context.user_data["partita_desc"] = partita_desc
+    context.user_data["partita_desc"] = partita["desc"]
+    context.user_data["partita_data"] = partita["data"]
 
     keyboard = [
         [InlineKeyboardButton("1", callback_data="1"),
@@ -63,7 +78,7 @@ async def scelta_partita(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("2", callback_data="2")]
     ]
     await query.edit_message_text(
-        f"📌 Partita selezionata: {partita_desc}\n\nScegli l’esito:",
+        f"📌 Partita selezionata: {partita['desc']}\n\nScegli l’esito:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -71,6 +86,13 @@ async def scelta_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     esito = query.data
+
+    partita_id = context.user_data.get("partita_id")
+    partita = get_partita(partita_id)
+    if not partita or partita_scaduta(partita):
+        await query.edit_message_text("⛔ Non puoi più modificare questa partita.")
+        return
+
     context.user_data["esito"] = esito
     await query.edit_message_text(f"✅ Esito selezionato: {esito}\n\n✍️ Ora inviami il risultato esatto (es. 2-1):")
 
@@ -83,30 +105,75 @@ async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE
     partita_desc = context.user_data.get("partita_desc")
     esito = context.user_data.get("esito")
 
-    if not (partita_id and esito):
-        await update.message.reply_text("❌ Per favore usa /partite per iniziare una nuova scommessa.")
+    partita = get_partita(partita_id)
+    if not partita or partita_scaduta(partita):
+        await update.message.reply_text("⛔ Impossibile registrare: la partita è iniziata.")
         return
 
     riga = [user_id, nome_utente, partita_id, esito, risultato, partita_desc]
-    salva_scommessa_locale(riga)
-
     sheet = get_google_sheet()
     if sheet:
+        tutte = sheet.get_all_records()
+        index = next((i for i, r in enumerate(tutte)
+                     if r.get("user_id") == user_id and r.get("partita_id") == partita_id), None)
+        if index is not None:
+            sheet.delete_rows(index + 2)
         scrivi_su_google_sheet(sheet, riga)
 
+    salva_scommessa_locale(riga)
     await update.message.reply_text(
         f"✅ Scommessa registrata:\n\n📝 {partita_desc}\n📊 Esito: {esito}\n🎯 Risultato: {risultato}"
     )
     context.user_data.clear()
 
-async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    log_url = "https://telegram-bot-rexx.onrender.com/log"
-    await update.message.reply_text(f"🪵 Ecco il link per visualizzare i log:\n{log_url}")
-
 async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "✏️ La funzione di modifica sarà presto disponibile.\n"
-        "Potrai cambiare la tua scommessa fino all'inizio della partita."
+    sheet = get_google_sheet()
+    if not sheet:
+        await update.message.reply_text("⚠️ Errore durante l'accesso al foglio.")
+        return
+
+    user_id = str(update.effective_user.id)
+    tutte = sheet.get_all_records()
+    scommesse = [r for r in tutte if r.get("user_id") == user_id]
+
+    if not scommesse:
+        await update.message.reply_text("📭 Nessuna scommessa trovata da modificare.")
+        return
+
+    keyboard = []
+    for r in scommesse:
+        partita = get_partita(r["partita_id"])
+        if partita and not partita_scaduta(partita):
+            keyboard.append([InlineKeyboardButton(r["desc"], callback_data=f"mod_{r['partita_id']}")])
+
+    if not keyboard:
+        await update.message.reply_text("⏱️ Nessuna partita ancora modificabile.")
+        return
+
+    await update.message.reply_text("✏️ Seleziona la partita da modificare:", reply_markup=InlineKeyboardMarkup(keyboard))
+
+async def scelta_modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    partita_id = query.data.replace("mod_", "")
+    partita = get_partita(partita_id)
+
+    if not partita or partita_scaduta(partita):
+        await query.edit_message_text("⛔ La partita è già iniziata, non è più modificabile.")
+        return
+
+    context.user_data["partita_id"] = partita_id
+    context.user_data["partita_desc"] = partita["desc"]
+    context.user_data["partita_data"] = partita["data"]
+
+    keyboard = [
+        [InlineKeyboardButton("1", callback_data="1"),
+         InlineKeyboardButton("X", callback_data="X"),
+         InlineKeyboardButton("2", callback_data="2")]
+    ]
+    await query.edit_message_text(
+        f"✏️ Modifica per: {partita['desc']}\n\nSeleziona il nuovo esito:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -143,3 +210,6 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Tanto onore, tanto divertimento 😎",
         parse_mode="Markdown"
     )
+
+async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🛠️ Debug attivo. Usa /log per vedere i log su browser.")
