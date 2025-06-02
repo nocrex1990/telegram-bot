@@ -4,7 +4,6 @@ from telegram_bot_data import scommesse_utente, salva_scommessa_locale, partite_
 from google_utils import get_google_sheet, scrivi_su_google_sheet
 from config import application
 
-# Lista partite demo
 PARTITE = [
     {"id": "match1", "desc": "Al Ahly vs Inter Miami - 15/06 ore 02:00"},
     {"id": "match2", "desc": "Bayern Monaco vs Auckland City - 15/06 ore 18:00"},
@@ -14,13 +13,33 @@ PARTITE = [
 def setup_handlers():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("partite", partite))
+    application.add_handler(CommandHandler("modifica", modifica))
+    application.add_handler(CommandHandler("riepilogo", riepilogo))
+    application.add_handler(CommandHandler("info", info))
     application.add_handler(CommandHandler("debug", debug))
     application.add_handler(CallbackQueryHandler(scelta_partita, pattern="^match"))
     application.add_handler(CallbackQueryHandler(scelta_esito, pattern="^(1|X|2)$"))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, inserisci_risultato))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🎉 Benvenuto! Il bot è pronto per ricevere le tue scommesse.")
+    messaggio = (
+        "👋 *Benvenuto nel bot del Mondiale per Club 2025!*\n\n"
+        "Con questo bot puoi:\n"
+        "- Inserire una scommessa su ogni partita (esito + risultato esatto)\n"
+        "- Modificarla fino all'inizio dell'incontro\n"
+        "- Visualizzare un riepilogo delle tue scommesse\n\n"
+        "*Comandi disponibili:*\n"
+        "📅 /partite – Visualizza le partite e inserisci la tua scommessa\n"
+        "✏️ /modifica – Modifica una scommessa già inserita\n"
+        "📊 /riepilogo – Mostra le tue scommesse già registrate\n"
+        "ℹ️ /info – Dettagli sulla competizione e il regolamento\n\n"
+        "📌 *Regole:*\n"
+        "- Una scommessa per partita\n"
+        "- Risultato esatto coerente con l’esito\n"
+        "- Nessuna modifica o scommessa dopo l'orario della partita\n\n"
+        "🔁 Usa /start in qualsiasi momento per rivedere questo messaggio."
+    )
+    await update.message.reply_text(messaggio, parse_mode="Markdown")
 
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
@@ -83,3 +102,26 @@ async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
     log_url = "https://telegram-bot-rexx.onrender.com/log"
     await update.message.reply_text(f"🪵 Ecco il link per visualizzare i log:\n{log_url}")
+
+async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "✏️ La funzione di modifica sarà presto disponibile.\n"
+        "Potrai cambiare la tua scommessa fino all'inizio della partita."
+    )
+
+async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "📊 La funzione di riepilogo sarà presto disponibile.\n"
+        "Potrai visualizzare tutte le tue scommesse registrate."
+    )
+
+async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "ℹ️ *Mondiale per Club FIFA 2025*\n\n"
+        "- 32 squadre da tutto il mondo\n"
+        "- Partite a eliminazione diretta\n"
+        "- Vince chi indovina più risultati esatti!\n\n"
+        "Scommesse gratuite tra amici, nessun premio reale.\n"
+        "Tanto onore, tanto divertimento 😎",
+        parse_mode="Markdown"
+    )
