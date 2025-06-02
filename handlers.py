@@ -5,11 +5,10 @@ from google_utils import get_google_sheet, scrivi_su_google_sheet
 from config import application
 from datetime import datetime
 
-# === DATI PARTITE ===
 PARTITE = [
     {"id": "match1", "desc": "Al Ahly vs Inter Miami - 15/06 ore 02:00", "data": "2025-06-15 02:00"},
     {"id": "match2", "desc": "Bayern Monaco vs Auckland City - 15/06 ore 18:00", "data": "2025-06-15 18:00"},
-    {"id": "match3", "desc": "PSG vs Atletico Madrid - 15/06 ore 21:00", "data": "2025-06-15 21:00"},
+    {"id": "match3", "desc": "PSG vs Atletico Madrid - 15/06 ore 21:00", "data": "2025-06-15 21:00"}
 ]
 
 def get_partita(partita_id):
@@ -22,13 +21,25 @@ def partita_scaduta(partita):
     except Exception:
         return False
 
+def risultato_coerente(esito, risultato):
+    try:
+        g1, g2 = map(int, risultato.split("-"))
+        if esito == "1":
+            return g1 > g2
+        elif esito == "X":
+            return g1 == g2
+        elif esito == "2":
+            return g1 < g2
+        return False
+    except:
+        return False
+
 def setup_handlers():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("partite", partite))
     application.add_handler(CommandHandler("modifica", modifica))
     application.add_handler(CommandHandler("riepilogo", riepilogo))
     application.add_handler(CommandHandler("info", info))
-    application.add_handler(CommandHandler("debug", debug))
     application.add_handler(CallbackQueryHandler(scelta_partita, pattern="^match"))
     application.add_handler(CallbackQueryHandler(scelta_esito, pattern="^(1|X|2)$"))
     application.add_handler(CallbackQueryHandler(scelta_modifica, pattern="^mod_"))
@@ -55,15 +66,28 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(messaggio, parse_mode="Markdown")
 
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton(p["desc"], callback_data=p["id"])] for p in PARTITE]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("📅 Seleziona una partita:", reply_markup=reply_markup)
+    sheet = get_google_sheet()
+    user_id = str(update.effective_user.id)
+    scommesse_esistenti = []
+    if sheet:
+        scommesse_esistenti = [r["partita_id"] for r in sheet.get_all_records() if r["user_id"] == user_id]
+
+    keyboard = []
+    for p in PARTITE:
+        if p["id"] not in scommesse_esistenti and not partita_scaduta(p):
+            keyboard.append([InlineKeyboardButton(p["desc"], callback_data=p["id"])])
+
+    if not keyboard:
+        await update.message.reply_text("📭 Non ci sono partite disponibili per scommettere.")
+    else:
+        await update.message.reply_text("📅 Seleziona una partita:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def scelta_partita(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     partita_id = query.data
     partita = get_partita(partita_id)
+
     if not partita or partita_scaduta(partita):
         await query.edit_message_text("❌ La partita è già iniziata o non è valida.")
         return
@@ -86,13 +110,6 @@ async def scelta_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     esito = query.data
-
-    partita_id = context.user_data.get("partita_id")
-    partita = get_partita(partita_id)
-    if not partita or partita_scaduta(partita):
-        await query.edit_message_text("⛔ Non puoi più modificare questa partita.")
-        return
-
     context.user_data["esito"] = esito
     await query.edit_message_text(f"✅ Esito selezionato: {esito}\n\n✍️ Ora inviami il risultato esatto (es. 2-1):")
 
@@ -110,6 +127,10 @@ async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("⛔ Impossibile registrare: la partita è iniziata.")
         return
 
+    if not risultato_coerente(esito, risultato):
+        await update.message.reply_text("⚠️ Il risultato non è coerente con l’esito scelto. Riprova (es. 2-1 per '1').")
+        return
+
     riga = [user_id, nome_utente, partita_id, esito, risultato, partita_desc]
     sheet = get_google_sheet()
     if sheet:
@@ -122,7 +143,11 @@ async def inserisci_risultato(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     salva_scommessa_locale(riga)
     await update.message.reply_text(
-        f"✅ Scommessa registrata:\n\n📝 {partita_desc}\n📊 Esito: {esito}\n🎯 Risultato: {risultato}"
+        f"🎉 *Scommessa registrata con successo!*\n\n"
+        f"📝 *{partita_desc}*\n"
+        f"📊 Esito: *{esito}*\n"
+        f"🎯 Risultato: *{risultato}*",
+        parse_mode="Markdown"
     )
     context.user_data.clear()
 
@@ -135,10 +160,6 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.effective_user.id)
     tutte = sheet.get_all_records()
     scommesse = [r for r in tutte if r.get("user_id") == user_id]
-
-    if not scommesse:
-        await update.message.reply_text("📭 Nessuna scommessa trovata da modificare.")
-        return
 
     keyboard = []
     for r in scommesse:
@@ -210,6 +231,3 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "Tanto onore, tanto divertimento 😎",
         parse_mode="Markdown"
     )
-
-async def debug(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🛠️ Debug attivo. Usa /log per vedere i log su browser.")
