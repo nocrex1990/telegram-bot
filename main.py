@@ -9,8 +9,8 @@ from telegram.ext import (
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
-BOT_TOKEN = "YOUR_BOT_TOKEN"
-CSV_FILE = "partite_con_id.csv"
+BOT_TOKEN = 7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA
+CSV_FILE = "partite.csv"
 GOOGLE_SHEET_NAME = "Scommesse Mondiale Club FIFA 2025"
 CREDENTIALS_FILE = "google-credentials.json"
 
@@ -123,9 +123,10 @@ async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     esito = query.data.split("_", 1)[1]
     scommesse_in_corso[user_id]['esito'] = esito
-    await query.edit_message_text(f"✅ Hai selezionato l'esito: {esito}
-
-✍️ Ora inserisci il risultato esatto (es. 2-1):")
+    await query.edit_message_text(
+        f"✅ Hai selezionato l'esito: {esito}"
+        "✍️ Ora inserisci il risultato esatto (es. 2-1):"
+    )
 
 async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -172,12 +173,13 @@ async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("X", callback_data="esito_X"),
          InlineKeyboardButton("2", callback_data="esito_2")]
     ]
-    await query.edit_message_text(f"✏️ Stai modificando la scommessa per: {match[5]}
-
-Scegli un nuovo esito tra:
-- 1: vince la prima squadra
-- X: pareggio
-- 2: vince la seconda squadra", reply_markup=InlineKeyboardMarkup(buttons))
+    await query.edit_message_text(
+        f"✏️ Stai modificando la scommessa per: {match[5]}"
+        "Scegli un nuovo esito tra:"
+        "- 1: vince la prima squadra"
+        "- X: pareggio"
+        "- 2: vince la seconda squadra",
+        reply_markup=InlineKeyboardMarkup(buttons))
 
 async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -185,25 +187,18 @@ async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not bets:
         await update.message.reply_text("Non hai ancora fatto nessuna scommessa.")
         return
-    testo = "📋 Le tue scommesse:
-
-"
+    testo = ("📋 Le tue scommesse:")
     for val in bets.values():
-        testo += f"- {val['desc']} → {val['esito']} ({val['risultato']})
-"
+        testo += f"- {val['desc']} → {val['esito']} ({val['risultato']})"
     await update.message.reply_text(testo)
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "ℹ️ Con questo bot puoi:
-"
-        "- Visualizzare le partite con /partite
-"
-        "- Scommettere su esito e risultato esatto
-"
-        "- Modificare le scommesse con /modifica fino all'inizio
-"
-        "- Vedere il riepilogo con /riepilogo"
+        "ℹ️ Con questo bot puoi:"
+        "- Visualizzare le partite con /partite"
+        "- Scommettere su esito e risultato esatto"
+        "- Modificare le scommesse con /modifica fino all'inizio della partita"
+        "- Vedere il riepilogo delle tue scommesse con /riepilogo"
     )
 
 # === SETUP ===
