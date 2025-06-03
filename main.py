@@ -68,10 +68,20 @@ scommesse_in_corso = {}
 # === HANDLER ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 Benvenuto nel bot del Mondiale per Club 2025!\n\n"
-        "Con questo bot puoi:\n"
-        "- Inserire una scommessa su ogni partita (esito + risultato esatto)\n"
-        "- Modificarla fino all'inizio della partita"
+        "👋 Benvenuto nel bot del Mondiale per Club 2025!
+"
+        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo.
+
+"
+        "Ecco i comandi disponibili:
+"
+        "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)
+"
+        "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita
+"
+        "📋 /riepilogo — per vedere tutte le tue scommesse attuali
+"
+        "ℹ️ /info — per rileggere queste istruzioni in qualsiasi momento"
     )
 
 async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -167,9 +177,12 @@ async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("X", callback_data="esito_X"),
          InlineKeyboardButton("2", callback_data="esito_2")]
     ]
-    await query.edit_message_text(f"{match[5]}
+    await query.edit_message_text(f"✏️ Stai modificando la scommessa per: {match[5]}
 
-Scegli il nuovo esito:", reply_markup=InlineKeyboardMarkup(buttons))
+Scegli un nuovo esito tra:
+- 1: vince la prima squadra
+- X: pareggio
+- 2: vince la seconda squadra", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
