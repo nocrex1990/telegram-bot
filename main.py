@@ -168,7 +168,7 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not buttons:
         await update.message.reply_text("⛔ Tutte le partite su cui hai scommesso sono già iniziate.")
         return
-    await update.message.reply_text("📝 Quale scommessa vuoi modificare?", reply_markup=InlineKeyboardMarkup(buttons))
+    await update.message.reply_text("📜 Quale scommessa vuoi modificare?", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -218,6 +218,7 @@ async def handle(request):
     return web.Response(text="OK")
 
 async def on_startup(app):
+    await application.initialize()
     await application.bot.set_webhook(WEBHOOK_URL)
 
 application = Application.builder().token(BOT_TOKEN).build()
