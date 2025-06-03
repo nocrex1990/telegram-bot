@@ -1,8 +1,12 @@
+# main.py
+
+import os
 import csv
 import gspread
+from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+    Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 )
 from google.oauth2.service_account import Credentials
 from datetime import datetime
@@ -11,6 +15,8 @@ BOT_TOKEN = "7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA"
 CSV_FILE = "partite.csv"
 GOOGLE_SHEET_NAME = "Scommesse Mondiale Club FIFA 2025"
 CREDENTIALS_FILE = "google-credentials.json"
+WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
+WEBHOOK_URL = f"https://telegram-bot-rexx.onrender.com{WEBHOOK_PATH}"
 
 # === SHEETS ===
 def get_sheet():
@@ -63,7 +69,7 @@ def get_match_by_id(match_id):
 user_bets = {}
 scommesse_in_corso = {}
 
-# === HANDLER ===
+# === HANDLERS ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "👋 Benvenuto nel bot del Mondiale per Club 2025!\n"
@@ -204,16 +210,32 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "- Vedere il riepilogo delle tue scommesse con /riepilogo"
     )
 
-# === SETUP ===
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("partite", partite))
-app.add_handler(CommandHandler("modifica", modifica))
-app.add_handler(CommandHandler("riepilogo", riepilogo))
-app.add_handler(CommandHandler("info", info))
-app.add_handler(CallbackQueryHandler(date_selected, pattern="^date_"))
-app.add_handler(CallbackQueryHandler(match_selected, pattern="^match_"))
-app.add_handler(CallbackQueryHandler(modifica_selected, pattern="^mod_"))
-app.add_handler(CallbackQueryHandler(esito_selected, pattern="^esito_"))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultato_message))
-app.run_polling()
+# === AIOHTTP WEBHOOK ===
+async def handle(request):
+    data = await request.json()
+    update = Update.de_json(data, application.bot)
+    await application.process_update(update)
+    return web.Response(text="OK")
+
+async def on_startup(app):
+    await application.bot.set_webhook(WEBHOOK_URL)
+
+application = Application.builder().token(BOT_TOKEN).build()
+application.add_handler(CommandHandler("start", start))
+application.add_handler(CommandHandler("partite", partite))
+application.add_handler(CommandHandler("modifica", modifica))
+application.add_handler(CommandHandler("riepilogo", riepilogo))
+application.add_handler(CommandHandler("info", info))
+application.add_handler(CallbackQueryHandler(date_selected, pattern="^date_"))
+application.add_handler(CallbackQueryHandler(match_selected, pattern="^match_"))
+application.add_handler(CallbackQueryHandler(modifica_selected, pattern="^mod_"))
+application.add_handler(CallbackQueryHandler(esito_selected, pattern="^esito_"))
+application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultato_message))
+
+app = web.Application()
+app.router.add_post(WEBHOOK_PATH, handle)
+app.on_startup.append(on_startup)
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    web.run_app(app, port=port)
