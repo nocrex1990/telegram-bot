@@ -68,19 +68,12 @@ scommesse_in_corso = {}
 # === HANDLER ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 Benvenuto nel bot del Mondiale per Club 2025!
-"
-        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo.
-
-"
-        "Ecco i comandi disponibili:
-"
-        "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)
-"
-        "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita
-"
-        "📋 /riepilogo — per vedere tutte le tue scommesse attuali
-"
+        "👋 Benvenuto nel bot del Mondiale per Club 2025!"
+        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo."
+        "Ecco i comandi disponibili:"
+        "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)"
+        "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita"
+        "📋 /riepilogo — per vedere tutte le tue scommesse attuali"
         "ℹ️ /info — per rileggere queste istruzioni in qualsiasi momento"
     )
 
@@ -101,7 +94,7 @@ async def date_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     date = query.data.split("_", 1)[1]
     matches = get_matches_by_date(date, user_bets[user_id])
     buttons = [[InlineKeyboardButton(f"{m[1]} - {m[2]} ({m[3][11:]})", callback_data=f"match_{m[0]}")] for m in matches]
-    await query.edit_message_text("⚽ Scegli una partita:", reply_markup=InlineKeyboardMarkup(buttons))
+    await query.edit_message_text("⚽ Scegli una partita:", reply_markup=None)
 
 async def match_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -122,7 +115,7 @@ async def match_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
          InlineKeyboardButton("X", callback_data="esito_X"),
          InlineKeyboardButton("2", callback_data="esito_2")]
     ]
-    await query.edit_message_text(f"{match[5]}\n\nScegli l'esito:", reply_markup=InlineKeyboardMarkup(buttons))
+    await query.edit_message_text(f"{match[5]}\n\nScegli l'esito:", reply_markup=None)
 
 async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -130,7 +123,9 @@ async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     esito = query.data.split("_", 1)[1]
     scommesse_in_corso[user_id]['esito'] = esito
-    await query.edit_message_text("✍️ Inserisci il risultato esatto (es. 2-1):")
+    await query.edit_message_text(f"✅ Hai selezionato l'esito: {esito}
+
+✍️ Ora inserisci il risultato esatto (es. 2-1):")
 
 async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
