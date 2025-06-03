@@ -9,7 +9,7 @@ from telegram.ext import (
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 
-BOT_TOKEN = 7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA
+BOT_TOKEN = "7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA"
 CSV_FILE = "partite.csv"
 GOOGLE_SHEET_NAME = "Scommesse Mondiale Club FIFA 2025"
 CREDENTIALS_FILE = "google-credentials.json"
@@ -34,7 +34,7 @@ def write_bet(user_id, username, partita_id, esito, risultato, desc):
         sheet.update_cell(cell.row, 4, esito)
         sheet.update_cell(cell.row, 5, risultato)
     else:
-        sheet.append_row([user_id, username, partita_id, esito, risultato, desc])
+        sheet.append_row([user_id, username or "-", partita_id, esito, risultato, desc])
 
 # === PARTITE ===
 def load_matches():
@@ -53,10 +53,10 @@ def load_matches():
 
 def get_available_dates(bets):
     matches = load_matches()
-    return sorted({m[3].split()[0] for m in matches if m[0] not in bets})
+    return sorted({m[3].split()[0] for m in matches if m[0] not in bets and datetime.strptime(m[3], "%Y-%m-%d %H:%M") > datetime.now()})
 
 def get_matches_by_date(date, bets):
-    return [m for m in load_matches() if m[3].startswith(date) and m[0] not in bets]
+    return [m for m in load_matches() if m[3].startswith(date) and m[0] not in bets and datetime.strptime(m[3], "%Y-%m-%d %H:%M") > datetime.now()]
 
 def get_match_by_id(match_id):
     return next((m for m in load_matches() if m[0] == match_id), None)
@@ -68,12 +68,12 @@ scommesse_in_corso = {}
 # === HANDLER ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "👋 Benvenuto nel bot del Mondiale per Club 2025!"
-        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo."
-        "Ecco i comandi disponibili:"
-        "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)"
-        "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita"
-        "📋 /riepilogo — per vedere tutte le tue scommesse attuali"
+        "👋 Benvenuto nel bot del Mondiale per Club 2025!\n"
+        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo.\n"
+        "Ecco i comandi disponibili:\n"
+        "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)\n"
+        "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita\n"
+        "📋 /riepilogo — per vedere tutte le tue scommesse attuali\n"
         "ℹ️ /info — per rileggere queste istruzioni in qualsiasi momento"
     )
 
@@ -82,7 +82,7 @@ async def partite(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_bets[user_id] = get_user_bets(user_id)
     dates = get_available_dates(user_bets[user_id])
     if not dates:
-        await update.message.reply_text("✅ Hai già scommesso su tutte le partite.")
+        await update.message.reply_text("✅ Hai già scommesso su tutte le partite disponibili.")
         return
     buttons = [[InlineKeyboardButton(date, callback_data=f"date_{date}")] for date in dates]
     await update.message.reply_text("📅 Scegli una data:", reply_markup=InlineKeyboardMarkup(buttons))
@@ -93,8 +93,11 @@ async def date_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     date = query.data.split("_", 1)[1]
     matches = get_matches_by_date(date, user_bets[user_id])
+    if not matches:
+        await query.edit_message_text("⛔ Nessuna partita disponibile per quella data.", reply_markup=InlineKeyboardMarkup([[]]))
+        return
     buttons = [[InlineKeyboardButton(f"{m[1]} - {m[2]} ({m[3][11:]})", callback_data=f"match_{m[0]}")] for m in matches]
-    await query.edit_message_text("⚽ Scegli una partita:", reply_markup=None)
+    await query.edit_message_text("⚽ Scegli una partita:", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def match_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -103,19 +106,19 @@ async def match_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     match_id = query.data.split("_", 1)[1]
     match = get_match_by_id(match_id)
     if not match:
-        await query.edit_message_text("❌ Partita non trovata.")
+        await query.edit_message_text("❌ Partita non trovata.", reply_markup=InlineKeyboardMarkup([[]]))
         return
-    scommesse_in_corso[user_id] = {'match_id': match_id, 'desc': match[5], 'dataora': match[3]}
     ora_partita = datetime.strptime(match[3], "%Y-%m-%d %H:%M")
     if datetime.now() > ora_partita:
-        await query.edit_message_text("⛔ La partita è già iniziata.")
+        await query.edit_message_text("⛔ La partita è già iniziata.", reply_markup=InlineKeyboardMarkup([[]]))
         return
-    buttons = [
-        [InlineKeyboardButton("1", callback_data="esito_1"),
-         InlineKeyboardButton("X", callback_data="esito_X"),
-         InlineKeyboardButton("2", callback_data="esito_2")]
-    ]
-    await query.edit_message_text(f"{match[5]}\n\nScegli l'esito:", reply_markup=None)
+    scommesse_in_corso[user_id] = {'match_id': match_id, 'desc': match[5], 'dataora': match[3]}
+    buttons = [[
+        InlineKeyboardButton("1", callback_data="esito_1"),
+        InlineKeyboardButton("X", callback_data="esito_X"),
+        InlineKeyboardButton("2", callback_data="esito_2")
+    ]]
+    await query.edit_message_text(f"{match[5]}\n\nScegli l'esito:", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -124,8 +127,8 @@ async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     esito = query.data.split("_", 1)[1]
     scommesse_in_corso[user_id]['esito'] = esito
     await query.edit_message_text(
-        f"✅ Hai selezionato l'esito: {esito}"
-        "✍️ Ora inserisci il risultato esatto (es. 2-1):"
+        f"✅ Hai selezionato l'esito: {esito}\n✍️ Ora inserisci il risultato esatto (es. 2-1):",
+        reply_markup=InlineKeyboardMarkup([[]])
     )
 
 async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -146,7 +149,10 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto.")
         return
     write_bet(user_id, update.message.from_user.username, scommessa['match_id'], esito, risultato, scommessa['desc'])
-    await update.message.reply_text("✅ Scommessa registrata con successo!", reply_markup=ReplyKeyboardRemove())
+    await update.message.reply_text(
+        f"✅ Scommessa registrata!\n📝 {scommessa['desc']}\nEsito: {esito} — Risultato: {risultato}",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -154,7 +160,10 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not bets:
         await update.message.reply_text("Non hai scommesse da modificare.")
         return
-    buttons = [[InlineKeyboardButton(val['desc'], callback_data=f"mod_{pid}")] for pid, val in bets.items()]
+    buttons = [[InlineKeyboardButton(val['desc'], callback_data=f"mod_{pid}")] for pid, val in bets.items() if datetime.strptime(val['dataora'], "%Y-%m-%d %H:%M") > datetime.now()]
+    if not buttons:
+        await update.message.reply_text("⛔ Tutte le partite su cui hai scommesso sono già iniziate.")
+        return
     await update.message.reply_text("📝 Quale scommessa vuoi modificare?", reply_markup=InlineKeyboardMarkup(buttons))
 
 async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -165,20 +174,16 @@ async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     match = get_match_by_id(partita_id)
     ora_partita = datetime.strptime(match[3], "%Y-%m-%d %H:%M")
     if datetime.now() > ora_partita:
-        await query.edit_message_text("⛔ La partita è già iniziata e non può essere modificata.")
+        await query.edit_message_text("⛔ La partita è già iniziata e non può essere modificata.", reply_markup=InlineKeyboardMarkup([[]]))
         return
     scommesse_in_corso[user_id] = {'match_id': partita_id, 'desc': match[5], 'dataora': match[3]}
-    buttons = [
-        [InlineKeyboardButton("1", callback_data="esito_1"),
-         InlineKeyboardButton("X", callback_data="esito_X"),
-         InlineKeyboardButton("2", callback_data="esito_2")]
-    ]
+    buttons = [[
+        InlineKeyboardButton("1", callback_data="esito_1"),
+        InlineKeyboardButton("X", callback_data="esito_X"),
+        InlineKeyboardButton("2", callback_data="esito_2")
+    ]]
     await query.edit_message_text(
-        f"✏️ Stai modificando la scommessa per: {match[5]}"
-        "Scegli un nuovo esito tra:"
-        "- 1: vince la prima squadra"
-        "- X: pareggio"
-        "- 2: vince la seconda squadra",
+        f"✏️ Stai modificando la scommessa per: {match[5]}\nScegli un nuovo esito:",
         reply_markup=InlineKeyboardMarkup(buttons))
 
 async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -187,17 +192,17 @@ async def riepilogo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not bets:
         await update.message.reply_text("Non hai ancora fatto nessuna scommessa.")
         return
-    testo = ("📋 Le tue scommesse:")
+    testo = "📋 Le tue scommesse:\n"
     for val in bets.values():
-        testo += f"- {val['desc']} → {val['esito']} ({val['risultato']})"
+        testo += f"- {val['desc']} → {val['esito']} ({val['risultato']})\n"
     await update.message.reply_text(testo)
 
 async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "ℹ️ Con questo bot puoi:"
-        "- Visualizzare le partite con /partite"
-        "- Scommettere su esito e risultato esatto"
-        "- Modificare le scommesse con /modifica fino all'inizio della partita"
+        "ℹ️ Con questo bot puoi:\n"
+        "- Visualizzare le partite con /partite\n"
+        "- Scommettere su esito e risultato esatto\n"
+        "- Modificare le scommesse con /modifica fino all'inizio della partita\n"
         "- Vedere il riepilogo delle tue scommesse con /riepilogo"
     )
 
