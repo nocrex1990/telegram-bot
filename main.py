@@ -1,12 +1,10 @@
-# main.py
-
 import csv
 import gspread
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 )
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 BOT_TOKEN = "7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA"
@@ -16,8 +14,8 @@ CREDENTIALS_FILE = "google-credentials.json"
 
 # === SHEETS ===
 def get_sheet():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, scope)
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    creds = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=scope)
     client = gspread.authorize(creds)
     return client.open(GOOGLE_SHEET_NAME).sheet1
 
