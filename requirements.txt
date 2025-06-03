@@ -1,4 +1,4 @@
 python-telegram-bot[webhooks]==20.7
 aiohttp==3.9.5
-gspread
-google-auth
+gspread>=5.10.0
+google-auth>=2.0.0
