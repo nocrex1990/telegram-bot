@@ -65,6 +65,37 @@ def get_matches_by_date(date, bets):
 def get_match_by_id(match_id):
     return next((m for m in load_matches() if m[0] == match_id), None)
 
+def aggiorna_punteggi():
+    sheet = get_sheet()
+    risultati_sheet = get_sheet().spreadsheet.worksheet("Risultati")
+
+    risultati = risultati_sheet.get_all_records()
+    risultati_dict = {r['partita_id']: r for r in risultati}
+
+    records = sheet.get_all_records()
+    for i, riga in enumerate(records, start=2):  # +2 per tenere conto dell'intestazione (1-based index)
+        partita_id = riga['partita_id']
+        if partita_id not in risultati_dict:
+            continue
+
+        risultato_reale = risultati_dict[partita_id]['risultato']
+        esito_reale = risultati_dict[partita_id]['esito']
+
+        punteggio = 0
+        if riga['esito'] == esito_reale:
+            punteggio += 3
+        if riga['risultato'] == risultato_reale:
+            punteggio += 5
+
+        sheet.update_cell(i, 7, punteggio)  # colonna 7 = punteggio
+
+async def aggiorna_punteggi_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        aggiorna_punteggi()
+        await update.message.reply_text("✅ Punteggi aggiornati correttamente.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore durante l'aggiornamento dei punteggi: {e}")
+
 # === CALLBACK STATE ===
 user_bets = {}
 scommesse_in_corso = {}
@@ -255,6 +286,7 @@ application.add_handler(CallbackQueryHandler(match_selected, pattern="^match_"))
 application.add_handler(CallbackQueryHandler(modifica_selected, pattern="^mod_"))
 application.add_handler(CallbackQueryHandler(esito_selected, pattern="^esito_"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultato_message))
+application.add_handler(CommandHandler("aggiorna_punteggi", aggiorna_punteggi_command))
 
 app = web.Application()
 app.router.add_post(WEBHOOK_PATH, handle)
