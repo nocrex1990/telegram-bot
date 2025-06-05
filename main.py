@@ -96,6 +96,41 @@ async def aggiorna_punteggi_command(update: Update, context: ContextTypes.DEFAUL
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante l'aggiornamento dei punteggi: {e}")
 
+async def classifica_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        sheet = get_sheet()
+        records = sheet.get_all_records()
+
+        classifica = {}
+        for row in records:
+            user = row['username'] or f"ID:{row['user_id']}"
+            punti = row.get('punteggio')
+            if isinstance(punti, int):
+                classifica[user] = classifica.get(user, 0) + punti
+            elif isinstance(punti, str) and punti.isdigit():
+                classifica[user] = classifica.get(user, 0) + int(punti)
+
+        if not classifica:
+            await update.message.reply_text("❌ Nessun punteggio disponibile per generare la classifica.")
+            return
+
+        ordinata = sorted(classifica.items(), key=lambda x: x[1], reverse=True)
+        testo = "🏆 Classifica:\n"
+        for i, (utente, punti) in enumerate(ordinata, start=1):
+            if i == 1:
+                emoji = "🥇"
+            elif i == 2:
+                emoji = "🥈"
+            elif i == 3:
+                emoji = "🥉"
+            else:
+                emoji = f"{i}."
+            testo += f"{emoji} {utente} — {punti} punti\n"
+
+        await update.message.reply_text(testo)
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore durante la generazione della classifica: {e}")
+
 # === CALLBACK STATE ===
 user_bets = {}
 scommesse_in_corso = {}
@@ -287,6 +322,7 @@ application.add_handler(CallbackQueryHandler(modifica_selected, pattern="^mod_")
 application.add_handler(CallbackQueryHandler(esito_selected, pattern="^esito_"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultato_message))
 application.add_handler(CommandHandler("aggiorna_punteggi", aggiorna_punteggi_command))
+application.add_handler(CommandHandler("classifica", classifica_command))
 
 app = web.Application()
 app.router.add_post(WEBHOOK_PATH, handle)
