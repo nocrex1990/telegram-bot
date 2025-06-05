@@ -176,10 +176,20 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not bets:
         await update.message.reply_text("Non hai scommesse da modificare.")
         return
-    buttons = [[InlineKeyboardButton(val['desc'], callback_data=f"mod_{pid}")] for pid, val in bets.items() if datetime.strptime(val['dataora'], "%Y-%m-%d %H:%M") > datetime.now()]
+
+    buttons = []
+    for pid, val in bets.items():
+        match = get_match_by_id(pid)
+        if not match:
+            continue
+        ora_partita = datetime.strptime(match[3], "%Y-%m-%d %H:%M")
+        if ora_partita > datetime.now():
+            buttons.append([InlineKeyboardButton(val['desc'], callback_data=f"mod_{pid}")])
+
     if not buttons:
         await update.message.reply_text("⛔ Tutte le partite su cui hai scommesso sono già iniziate.")
         return
+
     await update.message.reply_text("📜 Quale scommessa vuoi modificare?", reply_markup=InlineKeyboardMarkup(buttons))
     await update.message.reply_text("✏️ Dopo aver selezionato, potrai cambiare esito e risultato.")
 
