@@ -181,6 +181,7 @@ async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("⛔ Tutte le partite su cui hai scommesso sono già iniziate.")
         return
     await update.message.reply_text("📜 Quale scommessa vuoi modificare?", reply_markup=InlineKeyboardMarkup(buttons))
+    await update.message.reply_text("✏️ Dopo aver selezionato, potrai cambiare esito e risultato.")
 
 async def modifica_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
