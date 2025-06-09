@@ -65,7 +65,7 @@ def get_matches_by_date(date, bets):
 def get_match_by_id(match_id):
     return next((m for m in load_matches() if m[0] == match_id), None)
 
-ef aggiorna_punteggi():
+def aggiorna_punteggi():
     sheet = get_sheet()
     risultati_sheet = get_sheet().spreadsheet.worksheet("Risultati")
 
