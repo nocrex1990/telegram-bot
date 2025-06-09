@@ -65,7 +65,7 @@ def get_matches_by_date(date, bets):
 def get_match_by_id(match_id):
     return next((m for m in load_matches() if m[0] == match_id), None)
 
-def aggiorna_punteggi():
+ef aggiorna_punteggi():
     sheet = get_sheet()
     risultati_sheet = get_sheet().spreadsheet.worksheet("Risultati")
 
@@ -103,7 +103,7 @@ async def classifica_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         classifica = {}
         for row in records:
-            user = row['username'] or f"ID:{row['user_id']}"
+            user = row.get('nome_custom') or row.get('username') or f"ID:{row['user_id']}"
             punti = row.get('punteggio')
             if isinstance(punti, int):
                 classifica[user] = classifica.get(user, 0) + punti
@@ -130,6 +130,28 @@ async def classifica_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text(testo)
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante la generazione della classifica: {e}")
+
+async def imposta_nome_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.message.from_user.id)
+    args = context.args
+    if not args:
+        await update.message.reply_text("❌ Usa il comando così: /imposta_nome tuo_nome")
+        return
+    nuovo_nome = " ".join(args).strip()
+    try:
+        sheet = get_sheet()
+        records = sheet.get_all_records()
+        nome_aggiornato = False
+        for i, row in enumerate(records, start=2):
+            if str(row['user_id']) == user_id:
+                sheet.update_cell(i, 8, nuovo_nome)  # colonna 8 = nome_custom
+                nome_aggiornato = True
+        if nome_aggiornato:
+            await update.message.reply_text(f"✅ Nome impostato come: {nuovo_nome}. Verrà usato per tutte le scommesse future e in classifica.")
+        else:
+            await update.message.reply_text("⚠️ Nessuna scommessa trovata con il tuo ID. Il nome sarà salvato alla prossima scommessa.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Errore durante l'impostazione del nome: {e}")
 
 # === CALLBACK STATE ===
 user_bets = {}
@@ -323,6 +345,7 @@ application.add_handler(CallbackQueryHandler(esito_selected, pattern="^esito_"))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultato_message))
 application.add_handler(CommandHandler("aggiorna_punteggi", aggiorna_punteggi_command))
 application.add_handler(CommandHandler("classifica", classifica_command))
+application.add_handler(CommandHandler("imposta_nome", imposta_nome_command))
 
 app = web.Application()
 app.router.add_post(WEBHOOK_PATH, handle)
