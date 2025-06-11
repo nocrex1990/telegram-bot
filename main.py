@@ -245,19 +245,20 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text("❌ Formato risultato non valido. Usa il formato es. 2-1.")
         return
+
     if (esito == "1" and squadra1_gol <= squadra2_gol) or \
-   (esito == "2" and squadra1_gol >= squadra2_gol) or \
-   (esito == "X" and squadra1_gol != squadra2_gol):
-    await update.message.reply_text(
-        f"❌ Il risultato {risultato} non è coerente con l'esito {esito}.\n"
-        "✍️ Inserisci un nuovo risultato esatto coerente (es. 2-1):"
-    )
-    # Reinserisce la scommessa corrente nel dizionario
-    if tipo == "nuova":
-        scommesse_in_corso[user_id] = scommessa
-    else:
-        modifica_in_corso[user_id] = scommessa
-    return
+       (esito == "2" and squadra1_gol >= squadra2_gol) or \
+       (esito == "X" and squadra1_gol != squadra2_gol):
+        await update.message.reply_text(
+            f"❌ Il risultato {risultato} non è coerente con l'esito {esito}.\n"
+            "✍️ Inserisci un nuovo risultato esatto coerente (es. 2-1):"
+        )
+        # Reinserisce la scommessa corrente nel dizionario
+        if tipo == "nuova":
+            scommesse_in_corso[user_id] = scommessa
+        else:
+            modifica_in_corso[user_id] = scommessa
+        return
 
     write_bet(user_id, update.message.from_user.username, scommessa['match_id'], esito, risultato, scommessa['desc'])
     msg = "✏️ Scommessa modificata!" if tipo == "modifica" else "✅ Scommessa registrata!"
