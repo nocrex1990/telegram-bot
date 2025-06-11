@@ -246,10 +246,18 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Formato risultato non valido. Usa il formato es. 2-1.")
         return
     if (esito == "1" and squadra1_gol <= squadra2_gol) or \
-       (esito == "2" and squadra1_gol >= squadra2_gol) or \
-       (esito == "X" and squadra1_gol != squadra2_gol):
-        await update.message.reply_text("❌ Il risultato non è coerente con l'esito scelto.")
-        return
+   (esito == "2" and squadra1_gol >= squadra2_gol) or \
+   (esito == "X" and squadra1_gol != squadra2_gol):
+    await update.message.reply_text(
+        f"❌ Il risultato {risultato} non è coerente con l'esito {esito}.\n"
+        "✍️ Inserisci un nuovo risultato esatto coerente (es. 2-1):"
+    )
+    # Reinserisce la scommessa corrente nel dizionario
+    if tipo == "nuova":
+        scommesse_in_corso[user_id] = scommessa
+    else:
+        modifica_in_corso[user_id] = scommessa
+    return
 
     write_bet(user_id, update.message.from_user.username, scommessa['match_id'], esito, risultato, scommessa['desc'])
     msg = "✏️ Scommessa modificata!" if tipo == "modifica" else "✅ Scommessa registrata!"
@@ -321,6 +329,21 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "- Vedere il riepilogo delle tue scommesse con /riepilogo"
     )
 
+async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    testo = (
+        "🛠️ *Comandi disponibili*\n\n"
+        "👋 /start — Avvia il bot e mostra le istruzioni iniziali\n"
+        "⚽ /partite — Visualizza le partite disponibili per scommettere (esito + risultato)\n"
+        "✏️ /modifica — Modifica una scommessa fatta, se la partita non è ancora iniziata\n"
+        "📋 /riepilogo — Mostra l'elenco delle scommesse già effettuate\n"
+        "ℹ️ /info — Riepilogo delle funzionalità principali del bot\n"
+        "📊 /classifica — Visualizza la classifica generale aggiornata\n"
+        "🔁 /aggiorna_punteggi — Confronta le scommesse con i risultati e aggiorna i punteggi\n"
+        "👤 /imposta_nome — Imposta un nome personalizzato da usare in classifica\n"
+        "🛠️ /admin — Elenco dei comandi disponibili e relative funzioni (questo messaggio)"
+    )
+    await update.message.reply_text(testo, parse_mode="Markdown")
+
 # === AIOHTTP WEBHOOK ===
 async def handle(request):
     data = await request.json()
@@ -346,6 +369,7 @@ application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, risultat
 application.add_handler(CommandHandler("aggiorna_punteggi", aggiorna_punteggi_command))
 application.add_handler(CommandHandler("classifica", classifica_command))
 application.add_handler(CommandHandler("imposta_nome", imposta_nome_command))
+application.add_handler(CommandHandler("admin", admin_command))
 
 app = web.Application()
 app.router.add_post(WEBHOOK_PATH, handle)
