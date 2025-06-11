@@ -89,6 +89,14 @@ def aggiorna_punteggi():
 
         sheet.update_cell(i, 7, punteggio)  # colonna 7 = punteggio
 
+def get_custom_name(user_id):
+    sheet = get_sheet().spreadsheet.worksheet("Nome utente")
+    records = sheet.get_all_records()
+    for row in records:
+        if str(row['user_id']) == str(user_id):
+            return row.get('nome')
+    return None
+
 async def aggiorna_punteggi_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         aggiorna_punteggi()
@@ -101,9 +109,14 @@ async def classifica_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
         sheet = get_sheet()
         records = sheet.get_all_records()
 
+        nome_sheet = get_sheet().spreadsheet.worksheet("Nome utente")
+        nome_records = nome_sheet.get_all_records()
+        nome_dict = {str(r['user_id']): r['nome'] for r in nome_records if r.get('nome')}
+
         classifica = {}
         for row in records:
-            user = row.get('nome_custom') or row.get('username') or f"ID:{row['user_id']}"
+            user_id = str(row['user_id'])
+            user = nome_dict.get(user_id) or row.get('username') or f"ID:{user_id}"
             punti = row.get('punteggio')
             if isinstance(punti, int):
                 classifica[user] = classifica.get(user, 0) + punti
@@ -139,17 +152,18 @@ async def imposta_nome_command(update: Update, context: ContextTypes.DEFAULT_TYP
         return
     nuovo_nome = " ".join(args).strip()
     try:
-        sheet = get_sheet()
-        records = sheet.get_all_records()
-        nome_aggiornato = False
+        nome_sheet = get_sheet().spreadsheet.worksheet("Nome utente")
+        records = nome_sheet.get_all_records()
+        trovato = False
         for i, row in enumerate(records, start=2):
             if str(row['user_id']) == user_id:
-                sheet.update_cell(i, 8, nuovo_nome)  # colonna 8 = nome_custom
-                nome_aggiornato = True
-        if nome_aggiornato:
-            await update.message.reply_text(f"✅ Nome impostato come: {nuovo_nome}. Verrà usato per tutte le scommesse future e in classifica.")
-        else:
-            await update.message.reply_text("⚠️ Nessuna scommessa trovata con il tuo ID. Il nome sarà salvato alla prossima scommessa.")
+                nome_sheet.update_cell(i, 2, nuovo_nome)  # seconda colonna = nome
+                trovato = True
+                break
+        if not trovato:
+            nome_sheet.append_row([user_id, nuovo_nome])
+
+        await update.message.reply_text(f"✅ Nome impostato come: {nuovo_nome}. Verrà usato per la classifica.")
     except Exception as e:
         await update.message.reply_text(f"❌ Errore durante l'impostazione del nome: {e}")
 
