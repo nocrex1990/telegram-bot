@@ -256,6 +256,7 @@ async def esito_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
     risultato = update.message.text.strip()
+
     if user_id in scommesse_in_corso:
         scommessa = scommesse_in_corso.pop(user_id)
         tipo = "nuova"
@@ -265,13 +266,15 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         return
 
-    esito = scommessa['esito']
+    # Verifica formato
     try:
         squadra1_gol, squadra2_gol = map(int, risultato.split("-"))
     except:
         await update.message.reply_text("❌ Formato risultato non valido. Usa il formato es. 2-1.")
         return
 
+    # Verifica coerenza esito-risultato
+    esito = scommessa['esito']
     if (esito == "1" and squadra1_gol <= squadra2_gol) or \
        (esito == "2" and squadra1_gol >= squadra2_gol) or \
        (esito == "X" and squadra1_gol != squadra2_gol):
@@ -279,20 +282,20 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"❌ Il risultato {risultato} non è coerente con l'esito {esito}.\n"
             "✍️ Inserisci un nuovo risultato esatto coerente (es. 2-1):"
         )
-        # Reinserisce la scommessa corrente nel dizionario
         if tipo == "nuova":
             scommesse_in_corso[user_id] = scommessa
         else:
             modifica_in_corso[user_id] = scommessa
         return
 
+    # Salvataggio scommessa
     write_bet(user_id, update.message.from_user.username, scommessa['match_id'], esito, risultato, scommessa['desc'])
     msg = "✏️ Scommessa modificata!" if tipo == "modifica" else "✅ Scommessa registrata!"
-await update.message.reply_text(
-    f"{msg}\n📝 {scommessa['desc']}\nEsito: {esito} — Risultato: {risultato}\n\n"
-    "📌 Per fare nuove scommesse puoi usare /partite oppure premere /start per rileggere le istruzioni iniziali.",
-    reply_markup=ReplyKeyboardRemove()
-)
+    await update.message.reply_text(
+        f"{msg}\n📝 {scommessa['desc']}\nEsito: {esito} — Risultato: {risultato}\n\n"
+        "📌 Per fare nuove scommesse puoi usare /partite oppure premere /start per rileggere le istruzioni iniziali.",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
