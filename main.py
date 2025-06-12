@@ -1,7 +1,6 @@
 # main.py
 
 import os
-import csv
 import gspread
 from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
@@ -12,7 +11,6 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 
 BOT_TOKEN = "7325517939:AAGlZfdCwK8q7xaTfyGjO-EUDw-hTWuUrDA"
-CSV_FILE = "partite.csv"
 GOOGLE_SHEET_NAME = "Scommesse Mondiale Club FIFA 2025"
 CREDENTIALS_FILE = "google-credentials.json"
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
