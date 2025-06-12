@@ -42,17 +42,20 @@ def write_bet(user_id, username, partita_id, esito, risultato, desc):
 
 # === PARTITE ===
 def load_matches():
+    sheet = get_sheet().spreadsheet.worksheet("Partite")
+    records = sheet.get_all_records()
     matches = []
-    with open(CSV_FILE, newline='', encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            id = row['partita_id']
+    for row in records:
+        try:
+            id = str(row['partita_id'])
             squadra1 = row['Squadra1']
             squadra2 = row['Squadra2']
             dataora = f"{row['Data']} {row['Ora']}"
-            stadio = row['Stadio']
+            stadio = row.get('Stadio', '-')
             desc = f"{squadra1} vs {squadra2} - {row['Data']} ore {row['Ora']}"
             matches.append((id, squadra1, squadra2, dataora, stadio, desc))
+        except KeyError as e:
+            print(f"❌ Errore nella riga: {row} — Campo mancante: {e}")
     return matches
 
 def get_available_dates(bets):
