@@ -98,6 +98,22 @@ def get_custom_name(user_id):
             return row.get('nome')
     return None
 
+from telegram import BotCommand
+
+async def set_bot_commands(application):
+    commands = [
+        BotCommand("start", "Avvia il bot e mostra le istruzioni"),
+        BotCommand("partite", "Visualizza le partite disponibili per scommettere"),
+        BotCommand("modifica", "Modifica una scommessa effettuata"),
+        BotCommand("riepilogo", "Mostra l’elenco delle tue scommesse"),
+        BotCommand("info", "Riepilogo delle funzionalità principali del bot"),
+        BotCommand("classifica", "Visualizza la classifica generale"),
+        BotCommand("aggiorna_punteggi", "Aggiorna i punteggi confrontando i risultati"),
+        BotCommand("imposta_nome", "Imposta il tuo nome per la classifica"),
+        BotCommand("admin", "Mostra l’elenco completo dei comandi")
+    ]
+    await application.bot.set_my_commands(commands)
+
 async def aggiorna_punteggi_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         aggiorna_punteggi()
@@ -386,6 +402,7 @@ async def handle(request):
 async def on_startup(app):
     await application.initialize()
     await application.bot.set_webhook(WEBHOOK_URL)
+    await set_bot_commands(application)
 
 application = Application.builder().token(BOT_TOKEN).build()
 application.add_handler(CommandHandler("start", start))
