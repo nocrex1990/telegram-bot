@@ -174,13 +174,25 @@ modifica_in_corso = {}
 
 # === HANDLERS ===
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = str(update.message.from_user.id)
+    username = update.message.from_user.username or "-"
+    nome_personalizzato = get_custom_name(user_id)
+
+    if username == "-" and not nome_personalizzato:
+        await update.message.reply_text(
+            "👤 Non hai un nome utente impostato.
+"
+            "👉 Usa il comando /imposta_nome seguito dal nome che vuoi usare in classifica (es. /imposta_nome Marco Rossi)"
+        )
+
     await update.message.reply_text(
-        "👋 Benvenuto nel bot del Mondiale per Club 2025!\n"
-        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo.\n"
-        "Ecco i comandi disponibili:\n"
+        "👋 Benvenuto nel bot del Mondiale per Club 2025!\n\n"
+        "Con questo bot puoi partecipare a una sfida tra amici pronosticando tutte le partite del torneo.\n\n"
+        "📌 Cosa puoi fare:\n"
         "⚽ /partite — per vedere le partite disponibili e inserire una scommessa (esito + risultato esatto)\n"
         "✏️ /modifica — per modificare una scommessa già fatta, fino all'inizio della partita\n"
         "📋 /riepilogo — per vedere tutte le tue scommesse attuali\n"
+        "👤 /imposta_nome — per assegnare un nome personalizzato da usare in classifica\n"
         "ℹ️ /info — per rileggere queste istruzioni in qualsiasi momento"
     )
 
@@ -276,10 +288,11 @@ async def risultato_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     write_bet(user_id, update.message.from_user.username, scommessa['match_id'], esito, risultato, scommessa['desc'])
     msg = "✏️ Scommessa modificata!" if tipo == "modifica" else "✅ Scommessa registrata!"
-    await update.message.reply_text(
-        f"{msg}\n📝 {scommessa['desc']}\nEsito: {esito} — Risultato: {risultato}",
-        reply_markup=ReplyKeyboardRemove()
-    )
+await update.message.reply_text(
+    f"{msg}\n📝 {scommessa['desc']}\nEsito: {esito} — Risultato: {risultato}\n\n"
+    "📌 Per fare nuove scommesse puoi usare /partite oppure premere /start per rileggere le istruzioni iniziali.",
+    reply_markup=ReplyKeyboardRemove()
+)
 
 async def modifica(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.from_user.id)
@@ -347,15 +360,15 @@ async def info(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     testo = (
         "🛠️ *Comandi disponibili*\n\n"
-        "👋 /start — Avvia il bot e mostra le istruzioni iniziali\n"
-        "⚽ /partite — Visualizza le partite disponibili per scommettere (esito + risultato)\n"
-        "✏️ /modifica — Modifica una scommessa fatta, se la partita non è ancora iniziata\n"
-        "📋 /riepilogo — Mostra l'elenco delle scommesse già effettuate\n"
-        "ℹ️ /info — Riepilogo delle funzionalità principali del bot\n"
-        "📊 /classifica — Visualizza la classifica generale aggiornata\n"
-        "🔁 /aggiorna_punteggi — Confronta le scommesse con i risultati e aggiorna i punteggi\n"
-        "👤 /imposta_nome — Imposta un nome personalizzato da usare in classifica\n"
-        "🛠️ /admin — Elenco dei comandi disponibili e relative funzioni (questo messaggio)"
+        "👋 /start >Avvia il bot e mostra le istruzioni iniziali\n" 
+        "⚽ /partite >Visualizza le partite disponibili per scommettere (esito + risultato)\n" 
+        "✏️ /modifica >Modifica una scommessa fatta, se la partita non è ancora iniziata\n" 
+        "📋 /riepilogo >Mostra l'elenco delle scommesse già effettuate\n" 
+        "ℹ️ /info >Riepilogo delle funzionalità principali del bot\n" 
+        "📊 /classifica >Visualizza la classifica generale aggiornata\n" 
+        "🔁 /aggiorna_punteggi >Confronta le scommesse con i risultati e aggiorna i punteggi\n" 
+        "👤 /imposta_nome >Imposta un nome personalizzato da usare in classifica\n" 
+        "🛠️ /admin >Elenco dei comandi disponibili e relative funzioni (questo messaggio)" 
     )
     await update.message.reply_text(testo, parse_mode="Markdown")
 
