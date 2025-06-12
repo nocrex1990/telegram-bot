@@ -183,6 +183,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "👤 Non hai un nome utente impostato.\n"
             "👉 Usa il comando /imposta_nome seguito dal nome che vuoi usare in classifica (es. /imposta_nome Marco Rossi)"
         )
+        return
 
     await update.message.reply_text(
         "👋 Benvenuto nel bot del Mondiale per Club 2025!\n\n"
