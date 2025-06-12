@@ -180,8 +180,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if username == "-" and not nome_personalizzato:
         await update.message.reply_text(
-            "👤 Non hai un nome utente impostato.
-"
+            "👤 Non hai un nome utente impostato.\n"
             "👉 Usa il comando /imposta_nome seguito dal nome che vuoi usare in classifica (es. /imposta_nome Marco Rossi)"
         )
 
